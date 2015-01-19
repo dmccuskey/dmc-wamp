@@ -1,8 +1,11 @@
 --====================================================================--
--- dmc_corona/dmc_wamp/utils.lua
+-- dmc_lua/bit.lua
+--
+-- a consistent method to load Lua BitOp on various systems
 --
 -- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
+
 
 --[[
 
@@ -33,14 +36,8 @@ SOFTWARE.
 
 
 --====================================================================--
---== DMC Corona Library : DMC WAMP Utils
+--== DMC Lua Library: Bitop Shim
 --====================================================================--
-
-
---[[
-Wamp support adapted from:
-* AutobahnPython (https://github.com/tavendo/AutobahnPython/)
---]]
 
 
 -- Semantic Versioning Specification: http://semver.org/
@@ -53,27 +50,17 @@ local VERSION = "0.1.0"
 --== Setup, Constants
 
 
-local mrandom = math.random
+-- these are some popular bit op modules
+local BITOP_LIBS = { 'plugin.bit', 'lib.bit.numberlua' }
 
-math.randomseed( os.time() )
+local has_bitOp, BitOp
 
-
-
---====================================================================--
---== Support Functions
-
-
-local function id()
-	return mrandom(0, 10^14)
+for _, name in ipairs( BITOP_LIBS ) do
+	has_bitOp, BitOp = pcall( require, name )
+	if has_bitOp then break end
 end
 
+assert( has_bitOp, "Bit module not found" )
 
+return BitOp
 
---====================================================================--
---== Utils Facade
---====================================================================--
-
-
-return {
-	id = id
-}

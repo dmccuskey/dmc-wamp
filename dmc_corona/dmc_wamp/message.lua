@@ -1,37 +1,39 @@
 --====================================================================--
--- dmc_wamp.messages
+-- dmc_corona/dmc_wamp/messages.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 
 --]]
 
 
 --====================================================================--
---== DMC Corona Library : Message
+--== DMC Corona Library : DMC WAMP Message
 --====================================================================--
 
 
@@ -39,6 +41,7 @@ DEALINGS IN THE SOFTWARE.
 Wamp support adapted from:
 * AutobahnPython (https://github.com/tavendo/AutobahnPython/)
 --]]
+
 
 -- Semantic Versioning Specification: http://semver.org/
 
@@ -52,11 +55,10 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'lua_objects'
-local Utils = require 'lua_utils'
+local Objects = require 'dmc_objects'
+local Utils = require 'dmc_utils'
 
-local Errors = require 'dmc_wamp.exception'
-local ProtocolError = Errors.ProtocolErrorFactory
+local WErrors = require 'dmc_wamp.exception'
 
 
 
@@ -64,8 +66,10 @@ local ProtocolError = Errors.ProtocolErrorFactory
 --== Setup, Constants
 
 
+local ProtocolError = WErrors.ProtocolErrorFactory
+
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
+local newClass = Objects.newClass
 local ObjectBase = Objects.ObjectBase
 
 
@@ -182,13 +186,12 @@ end
 --====================================================================--
 
 
-local Message = inheritsFrom( ObjectBase )
-Message.NAME = "Message Base"
+local Message = newClass( ObjectBase, {name="Message Base"} )
 
-function Message:_init( params )
-	-- print( "Message:_init" )
+function Message:__init__( params )
+	-- print( "Message:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	self.serialized = {}
@@ -209,15 +212,14 @@ end
 
 -- Format: `[ HELLO, Realm|uri, Details|dict ]`
 
-local Hello = inheritsFrom( Message )
-Hello.NAME = "Hello Message"
+local Hello = newClass( Message, {name="Hello Message"} )
 
 Hello.MESSAGE_TYPE = 1  -- wamp message code
 
-function Hello:_init( params )
-	-- print( "Hello:_init" )
+function Hello:__init__( params )
+	-- print( "Hello:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.realm )=='string' )
 	assert( type( params.roles )=='table' )
@@ -279,15 +281,14 @@ end
 
 -- Format: `[WELCOME, Session|id, Details|dict]`
 
-local Welcome = inheritsFrom( Message )
-Welcome.NAME = "Welcome Message"
+local Welcome = newClass( Message, {name="Welcome Message"} )
 
 Welcome.MESSAGE_TYPE = 2  -- wamp message code
 
-function Welcome:_init( params )
-	-- print( "Welcome:_init" )
+function Welcome:__init__( params )
+	-- print( "Welcome:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type(params.session)=='number' )
 	assert( type(params.roles)=='table' )
@@ -332,15 +333,14 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[ABORT, Details|dict, Reason|uri]``
 
-local Abort = inheritsFrom( Message )
-Abort.NAME = "Abort Message"
+local Abort = newClass( Message, {name="Abort Message"} )
 
 Abort.MESSAGE_TYPE = 3  -- wamp message code
 
-function Abort:_init( params )
-	-- print( "Abort:_init" )
+function Abort:__init__( params )
+	-- print( "Abort:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.reason )=='string' )
 	assert( params.message == nil or type( params.message )=='string' )
@@ -396,15 +396,14 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[CHALLENGE, Method|string, Extra|dict]``
 
-local Challenge = inheritsFrom( Message )
-Challenge.NAME = "Challenge Message"
+local Challenge = newClass( Message, {name="Challenge Message"} )
 
 Challenge.MESSAGE_TYPE = 4  -- wamp message code
 
-function Challenge:_init( params )
-	-- print( "Challenge:_init" )
+function Challenge:__init__( params )
+	-- print( "Challenge:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.method )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -457,16 +456,15 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[AUTHENTICATE, Signature|string, Extra|dict]``
 
-local Authenticate = inheritsFrom( Message )
-Authenticate.NAME = "Authenticate Message"
+local Authenticate = newClass( Message, {name="Authenticate Message"} )
 
 Authenticate.MESSAGE_TYPE = 5  -- wamp message code
 
-function Authenticate:_init( params )
-	-- print( "Authenticate:_init" )
+function Authenticate:__init__( params )
+	-- print( "Authenticate:__init__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.signature )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -500,16 +498,15 @@ end
 
 -- Format: `[GOODBYE, Details|dict, Reason|uri]`
 
-local Goodbye = inheritsFrom( Message )
-Goodbye.NAME = "Goodbye Message"
+local Goodbye = newClass( Message, {name="Goodbye Message"} )
 
 Goodbye.MESSAGE_TYPE = 6  -- wamp message code
 Goodbye.DEFAULT_REASON = 'wamp.goodbye.normal'
 
-function Goodbye:_init( params )
-	-- print( "Goodbye:_init" )
+function Goodbye:__init__( params )
+	-- print( "Goodbye:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type( params.reason )=='string' )
@@ -572,15 +569,14 @@ end
 -- ``[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]``
 
 
-local Heartbeat = inheritsFrom( Message )
-Heartbeat.NAME = "Heartbeat Message"
+local Heartbeat = newClass( Message, {name="Heartbeat Message"} )
 
 Heartbeat.MESSAGE_TYPE = 7  -- wamp message code
 
-function Heartbeat:_init( params )
-	-- print( "Heartbeat:_init" )
+function Heartbeat:__init__( params )
+	-- print( "Heartbeat:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.incoming ) == 'number' )
 	assert( type( params.outgoing ) == 'number' )
@@ -667,15 +663,14 @@ Formats:
 * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Error = inheritsFrom( Message )
-Error.NAME = "Error Message"
+local Error = newClass( Message, {name="Error Message"} )
 
 Error.MESSAGE_TYPE = 8  -- wamp message code
 
-function Error:_init( params )
-	-- print( "Error:_init" )
+function Error:__init__( params )
+	-- print( "Error:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type( params.request_type )=='number' )
@@ -790,15 +785,14 @@ Format:
 * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Publish = inheritsFrom( Message )
-Publish.NAME = "Publish Message"
+local Publish = newClass( Message, {name="Publish Message"} )
 
 Publish.MESSAGE_TYPE = 16  -- wamp message code
 
-function Publish:_init( params )
-	-- print( "Publish:_init" )
+function Publish:__init__( params )
+	-- print( "Publish:__init__" )
 	params = params or {}
-	self:superCall( "_init", params )
+	self:superCall( "__init__", params )
 	--==--
 
 	assert( type( params.request ) == 'number' )
@@ -878,15 +872,14 @@ Format:
 * `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
 --]]
 
-local Published = inheritsFrom( Message )
-Published.NAME = "Published Message"
+local Published = newClass( Message, {name="Published Message"} )
 
 Published.MESSAGE_TYPE = 17  -- wamp message code
 
-function Published:_init( params )
-	-- print( "Published:_init" )
+function Published:__init__( params )
+	-- print( "Published:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type( params.request )=='number' )
@@ -935,8 +928,7 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribe = inheritsFrom( Message )
-Subscribe.NAME = "Subscribe Message"
+local Subscribe = newClass( Message, {name="Subscribe Message"} )
 
 Subscribe.MESSAGE_TYPE = 32  -- wamp message code
 
@@ -944,10 +936,10 @@ Subscribe.MATCH_EXACT = 'exact'
 Subscribe.MATCH_PREFIX = 'prefix'
 Subscribe.MATCH_WILDCARD = 'wildcard'
 
-function Subscribe:_init( params )
-	-- print( "Subscribe:_init" )
+function Subscribe:__init__( params )
+	-- print( "Subscribe:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1012,15 +1004,14 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribed = inheritsFrom( Message )
-Subscribed.NAME = "Subscribed Message"
+local Subscribed = newClass( Message, {name="Subscribed Message"} )
 
 Subscribed.MESSAGE_TYPE = 33  -- wamp message code
 
-function Subscribed:_init( params )
-	-- print( "Subscribed:_init" )
+function Subscribed:__init__( params )
+	-- print( "Subscribed:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1072,15 +1063,14 @@ end
 Format: `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
 --]]
 
-local Unsubscribe = inheritsFrom( Message )
-Unsubscribe.NAME = "Unsubscribe Message"
+local Unsubscribe = newClass( Message, {name="Unsubscribe Message"} )
 
 Unsubscribe.MESSAGE_TYPE = 34  -- wamp message code
 
-function Unsubscribe:_init( params )
-	-- print( "Unsubscribe:_init" )
+function Unsubscribe:__init__( params )
+	-- print( "Unsubscribe:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1129,15 +1119,14 @@ end
 --====================================================================--
 
 
-local Unsubscribed = inheritsFrom( Message )
-Unsubscribed.NAME = "Unsubscribed Message"
+local Unsubscribed = newClass( Message, {name="Unsubscribed Message"} )
 
 Unsubscribed.MESSAGE_TYPE = 35  -- wamp message code
 
-function Unsubscribed:_init( params )
-	-- print( "Unsubscribed:_init" )
+function Unsubscribed:__init__( params )
+	-- print( "Unsubscribed:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1186,15 +1175,14 @@ Formats:
 * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]`
 --]]
 
-local Event = inheritsFrom( Message )
-Event.NAME = "Event Message"
+local Event = newClass( Message, {name="Event Message"} )
 
 Event.MESSAGE_TYPE = 36  -- wamp message code
 
-function Event:_init( params )
-	-- print( "Event:_init" )
+function Event:__init__( params )
+	-- print( "Event:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.subscription)=='number' )
@@ -1300,15 +1288,14 @@ Formats:
 * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Call = inheritsFrom( Message )
-Call.NAME = "Call Message"
+local Call = newClass( Message, {name="Call Message"} )
 
 Call.MESSAGE_TYPE = 48  -- wamp message code
 
-function Call:_init( params )
-	-- print( "Call:_init" )
+function Call:__init__( params )
+	-- print( "Call:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1380,8 +1367,7 @@ end
 
 -- Format: ``[CANCEL, CALL.Request|id, Options|dict]``
 
-local Cancel = inheritsFrom( Message )
-Cancel.NAME = "Cancel Message"
+local Cancel = newClass( Message, {name="Cancel Message"} )
 
 Cancel.MESSAGE_TYPE = 49  -- wamp message code
 
@@ -1390,10 +1376,10 @@ Cancel.ABORT = 'abort'
 Cancel.KILL = 'kill'
 
 
-function Cancel:_init( params )
-	-- print( "Cancel:_init" )
+function Cancel:__init__( params )
+	-- print( "Cancel:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -1439,15 +1425,14 @@ Formats:
 	* `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
 --]]
 
-local Result = inheritsFrom( Message )
-Result.NAME = "Result Message"
+local Result = newClass( Message, {name="Result Message"} )
 
 Result.MESSAGE_TYPE = 50  -- wamp message code
 
-function Result:_init( params )
-	-- print( "Result:_init" )
+function Result:__init__( params )
+	-- print( "Result:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1542,15 +1527,14 @@ Format:
 * `[REGISTER, Request|id, Options|dict, Procedure|uri]`
 --]]
 
-local Register = inheritsFrom( Message )
-Register.NAME = "Register Message"
+local Register = newClass( Message, {name="Register Message"} )
 
 Register.MESSAGE_TYPE = 64  -- wamp message code
 
-function Register:_init( params )
-	-- print( "Register:_init" )
+function Register:__init__( params )
+	-- print( "Register:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1616,15 +1600,14 @@ Format:
 * `[REGISTERED, REGISTER.Request|id, Registration|id]`
 --]]
 
-local Registered = inheritsFrom( Message )
-Registered.NAME = "Registered Message"
+local Registered = newClass( Message, {name="Registered Message"} )
 
 Registered.MESSAGE_TYPE = 65  -- wamp message code
 
-function Registered:_init( params )
-	-- print( "Registered:_init" )
+function Registered:__init__( params )
+	-- print( "Registered:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1685,15 +1668,14 @@ Format:
 * `[UNREGISTER, Request|id, REGISTERED.Registration|id]`
 --]]
 
-local Unregister = inheritsFrom( Message )
-Unregister.NAME = "Unregister Message"
+local Unregister = newClass( Message, {name="Unregister Message"} )
 
 Unregister.MESSAGE_TYPE = 66  -- wamp message code
 
-function Unregister:_init( params )
-	-- print( "Unregister:_init" )
+function Unregister:__init__( params )
+	-- print( "Unregister:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1735,15 +1717,14 @@ end
 --====================================================================--
 
 
-local Unregistered = inheritsFrom( Message )
-Unregistered.NAME = "Unregistered Message Class"
+local Unregistered = newClass( Message, {name="Unregistered Message"} )
 
 Unregistered.MESSAGE_TYPE = 67  -- wamp message code
 
-function Unregistered:_init( params )
-	-- print( "Unregistered:_init" )
+function Unregistered:__init__( params )
+	-- print( "Unregistered:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1801,15 +1782,14 @@ Formats:
 * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]`
 --]]
 
-local Invocation = inheritsFrom( Message )
-Invocation.NAME = "Invocation Message"
+local Invocation = newClass( Message, {name="Invocation Message"} )
 
 Invocation.MESSAGE_TYPE = 68  -- wamp message code
 
-function Invocation:_init( params )
-	-- print( "Invocation:_init" )
+function Invocation:__init__( params )
+	-- print( "Invocation:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1963,8 +1943,7 @@ end
 
 -- Format: ``[INTERRUPT, CALL.Request|id, Options|dict]``
 
-local Interrupt = inheritsFrom( Message )
-Interrupt.NAME = "Interrupt Message"
+local Interrupt = newClass( Message, {name="Interrupt Message"} )
 
 Interrupt.MESSAGE_TYPE = 69  -- wamp message code
 
@@ -1972,10 +1951,10 @@ Interrupt.ABORT = 'abort'
 Interrupt.KILL = 'kill'
 
 
-function Interrupt:_init( params )
-	-- print( "Interrupt:_init" )
+function Interrupt:__init__( params )
+	-- print( "Interrupt:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -2023,15 +2002,14 @@ Format:
 * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Yield = inheritsFrom( Message )
-Yield.NAME = "Yield Message"
+local Yield = newClass( Message, {name="Yield Message"} )
 
 Yield.MESSAGE_TYPE = 70  -- wamp message code
 
-function Yield:_init( params )
-	-- print( "Yield:_init" )
+function Yield:__init__( params )
+	-- print( "Yield:__init__" )
 	params = params or {}
-	self:superCall( "_init", params )
+	self:superCall( "__init__", params )
 	--==--
 
 	assert( type(params.request)=='number' )

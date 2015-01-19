@@ -1,5 +1,5 @@
 --====================================================================--
--- dmc_corona/dmc_wamp/utils.lua
+-- dmc_corona/dmc_websockets/exception.lua
 --
 -- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
@@ -8,7 +8,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2014-2015 David McCuskey
+Copyright (C) 2014-2015 David McCuskey. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,19 +33,22 @@ SOFTWARE.
 
 
 --====================================================================--
---== DMC Corona Library : DMC WAMP Utils
+--== DMC Corona Library : WebSockets Exception
 --====================================================================--
-
-
---[[
-Wamp support adapted from:
-* AutobahnPython (https://github.com/tavendo/AutobahnPython/)
---]]
 
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "0.1.0"
+local VERSION = "0.2.0"
+
+
+
+--====================================================================--
+--== Imports
+
+
+local Error = require 'lib.dmc_lua.lua_error'
+local Objects = require 'lib.dmc_lua.lua_objects'
 
 
 
@@ -53,27 +56,46 @@ local VERSION = "0.1.0"
 --== Setup, Constants
 
 
-local mrandom = math.random
-
-math.randomseed( os.time() )
+-- setup some aliases to make code cleaner
+local newClass = Objects.newClass
 
 
 
 --====================================================================--
---== Support Functions
+--== Protocol Error Class
+--====================================================================--
 
 
-local function id()
-	return mrandom(0, 10^14)
+local ProtocolError = newClass( Error, { name="Protocol Error" } )
+
+-- params:
+-- code
+-- reason
+-- message
+--
+function ProtocolError:__new__( params )
+	-- print( "ProtocolError:__init__" )
+	params = params or {}
+	self:superCall( '__new__', params.message, params )
+	--==--
+
+	if self.is_class then return end
+
+	assert( params.code, "ProtocolError: missing protocol code" )
+
+	self.code = params.code
+	self.reason = params.reason or ""
+
 end
 
 
 
+
 --====================================================================--
---== Utils Facade
+--== Exception Facade
 --====================================================================--
 
 
 return {
-	id = id
+	ProtocolError=ProtocolError
 }

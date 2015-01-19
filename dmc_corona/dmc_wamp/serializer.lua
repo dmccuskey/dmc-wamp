@@ -1,36 +1,44 @@
 --====================================================================--
--- dmc_wamp.serializer
+-- dmc_corona/dmc_wamp/serializer.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 --]]
 
+
+
+--====================================================================--
+--== DMC Corona Library : DMC WAMP Serializer
+--====================================================================--
+
+
 --[[
-Wamp support adapted from:
+WAMP support adapted from:
 * AutobahnPython (https://github.com/tavendo/AutobahnPython/)
 --]]
 
@@ -45,14 +53,12 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-
 local json = require 'json'
-local Objects = require 'lua_objects'
-local Utils = require 'lua_utils'
 
---== Components ==--
+local Objects = require 'dmc_objects'
+local Utils = require 'dmc_utils'
 
-local MessageFactory = require 'dmc_wamp.message'
+local WMessageFactory = require 'dmc_wamp.message'
 
 
 
@@ -61,7 +67,7 @@ local MessageFactory = require 'dmc_wamp.message'
 
 
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
+local newClass = Objects.newClass
 local ObjectBase = Objects.ObjectBase
 
 
@@ -71,18 +77,17 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local Serializer = inheritsFrom( ObjectBase )
-Serializer.NAME = "Serializer Class"
+local Serializer = newClass( ObjectBase, { name="Serializer" } )
 
-function Serializer:_init( params )
-	-- print( "Serializer:_init" )
+function Serializer:__init__( params )
+	-- print( "Serializer:__init__" )
 	params = params or {}
-	self:superCall( "_init", params )
+	self:superCall( '__init__', params )
 	--==--
 
-	if not self.is_intermediate and not params.serializer then
-		error( "Serializer: requires parameter 'serializer'" )
-	end
+	if self.is_class then return end
+
+	assert( params.serializer, "Serializer: requires parameter 'serializer'" )
 
 	self._serializer = params.serializer
 
@@ -105,7 +110,7 @@ function Serializer:unserialize( payload )
 	local raw_msg, msg_class, msg
 
 	raw_msg = self._serializer:unserialize( payload )
-	msg_class = MessageFactory.map[ raw_msg[1] ]
+	msg_class = WMessageFactory.map[ raw_msg[1] ]
 
 	if not msg_class then
 		error( "missing msg class, msg: " .. tostring( payload ) )
@@ -119,22 +124,22 @@ end
 
 
 --====================================================================--
--- JSON Serializer
+--== JSON Serializer
 --====================================================================--
 
-local JsonSerializer = inheritsFrom( Serializer )
-JsonSerializer.NAME = "Json Serializer Class"
+
+local JsonSerializer = newClass( Serializer, { name="JSON Serializer Class" } )
 
 JsonSerializer.SERIALIZER_ID = "json"
 
 
 
 --====================================================================--
--- JSON Object Serializer
+--== JSON Object Serializer
 --====================================================================--
 
-local JsonObjSerializer = inheritsFrom( ObjectBase )
-JsonObjSerializer.NAME = "Json Object Serializer Class"
+
+local JsonObjSerializer = newClass( ObjectBase, { name="JSON Object Serializer" } )
 
 JsonObjSerializer.BINARY = false
 
@@ -159,11 +164,11 @@ end
 
 
 --====================================================================--
--- Serializer Factory
+--== Serializer Factory
 --====================================================================--
 
-local SerializerFactory = {}
 
+local SerializerFactory = {}
 
 function SerializerFactory.create( s_type, params )
 	-- print( "SerializerFactory.create", s_type )

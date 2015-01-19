@@ -1,36 +1,44 @@
 --====================================================================--
--- dmc_wamp.types
+-- dmc_corona/dmc_wamp/types.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 --]]
 
+
+
+--====================================================================--
+--== DMC Corona Library : DMC WAMP Types
+--====================================================================--
+
+
 --[[
-Wamp support adapted from:
+WAMP support adapted from:
 * AutobahnPython (https://github.com/tavendo/AutobahnPython/)
 --]]
 
@@ -45,8 +53,8 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-local Objects = require 'lua_objects'
-local Utils = require 'lua_utils'
+local Objects = require 'dmc_objects'
+local Utils = require 'dmc_utils'
 
 
 
@@ -55,7 +63,7 @@ local Utils = require 'lua_utils'
 
 
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
+local newClass = Objects.newClass
 local ObjectBase = Objects.ObjectBase
 
 
@@ -65,13 +73,12 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local ComponentConfig = inheritsFrom( ObjectBase )
-ComponentConfig.NAME = "Component Configuration"
+local ComponentConfig = newClass( ObjectBase, {name="Component Configuration"} )
 
-function ComponentConfig:_init( params )
-	-- print( "ComponentConfig:_init" )
+function ComponentConfig:__init__( params )
+	-- print( "ComponentConfig:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.realm = params.realm
 	self.extra = params.extra
@@ -98,8 +105,7 @@ end
 --====================================================================--
 
 
-local HelloReturn = inheritsFrom( ObjectBase )
-HelloReturn.NAME = "Hello Return Base"
+local HelloReturn = newClass( ObjectBase, {name="Hello Return Base"} )
 
 
 
@@ -108,13 +114,12 @@ HelloReturn.NAME = "Hello Return Base"
 --====================================================================--
 
 
-local Accept = inheritsFrom( ObjectBase )
-Accept.NAME = "Accept"
+local Accept = newClass( ObjectBase, {name="Accept"} )
 
-function Accept:_init( params )
-	-- print( "Accept:_init" )
+function Accept:__init__( params )
+	-- print( "Accept:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( params.authid == nil or type( params.authid ) == 'string' )
 	assert( params.authrole == nil or type( params.authrole ) == 'string' )
@@ -134,17 +139,16 @@ end
 --====================================================================--
 
 
-local Deny = inheritsFrom( HelloReturn )
-Deny.NAME = "Deny"
+local Deny = newClass( HelloReturn, {name="Deny"} )
 
-function Deny:_init( params )
-	-- print( "Deny:_init" )
+function Deny:__init__( params )
+	-- print( "Deny:__init__" )
 	params = params or {}
 	params.reason = params.reason or "wamp.error.not_authorized"
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( type( params.reason ) == 'string' )
-	assert( params.message == nil or type( params.message ) == 'string' )
+	assert( params.message==nil or type( params.message )=='string' )
 
 	self.reason = params.reason
 	self.message = params.message
@@ -157,15 +161,14 @@ end
 --====================================================================--
 
 
-local Challenge = inheritsFrom( HelloReturn )
-Challenge.NAME = "Challenge"
+local Challenge = newClass( HelloReturn, {name="Challenge"} )
 
 
-function Challenge:_init( params )
-	-- print( "Challenge:_init" )
+function Challenge:__init__( params )
+	-- print( "Challenge:__init__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.method = params.method
 	self.extra = params.extra
@@ -178,13 +181,12 @@ end
 --====================================================================--
 
 
-local HelloDetails = inheritsFrom( HelloReturn )
-HelloDetails.NAME = "Hello Details"
+local HelloDetails = newClass( HelloReturn, {name="Hello Details"} )
 
-function HelloDetails:_init( params )
-	-- print( "HelloDetails:_init" )
+function HelloDetails:__init__( params )
+	-- print( "HelloDetails:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.roles = params.roles
 	self.authmethods = params.authmethods
@@ -199,13 +201,12 @@ end
 --====================================================================--
 
 
-local SessionDetails = inheritsFrom( HelloReturn )
-SessionDetails.NAME = "Session Details Class"
+local SessionDetails = newClass( HelloReturn, {name="Session Details"} )
 
-function SessionDetails:_init( params )
-	-- print( "SessionDetails:_init" )
+function SessionDetails:__init__( params )
+	-- print( "SessionDetails:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.realm = params.realm
 	self.session = params.session -- id
@@ -222,13 +223,12 @@ end
 --====================================================================--
 
 
-local CloseDetails = inheritsFrom( ObjectBase )
-CloseDetails.NAME = "Close Details"
+local CloseDetails = newClass( ObjectBase, {name="Close Details"} )
 
-function CloseDetails:_init( params )
-	-- print( "CloseDetails:_init" )
+function CloseDetails:__init__( params )
+	-- print( "CloseDetails:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.reason = params.reason
 	self.message = params.message
@@ -241,13 +241,12 @@ end
 --====================================================================--
 
 
-local SubscribeOptions = inheritsFrom( ObjectBase )
-SubscribeOptions.NAME = "Subscribe Options"
+local SubscribeOptions = newClass( ObjectBase, {name="Subscribe Options"} )
 
-function SubscribeOptions:_init( params )
-	-- print( "SubscribeOptions:_init" )
+function SubscribeOptions:__init__( params )
+	-- print( "SubscribeOptions:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	assert( params.match==nil or ( type( params.match ) == 'string' and Utils.propertyIn( { 'exact', 'prefix', 'wildcard' }, params.match ) ) )
 	assert( params.details_arg == nil or type( params.details_arg ) == 'string' )
@@ -266,13 +265,12 @@ end
 --====================================================================--
 
 
-local RegisterOptions = inheritsFrom( ObjectBase )
-RegisterOptions.NAME = "Register Options"
+local RegisterOptions = newClass( ObjectBase, {name="Register Options"} )
 
-function RegisterOptions:_init( params )
-	-- print( "RegisterOptions:_init" )
+function RegisterOptions:__init__( params )
+	-- print( "RegisterOptions:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.details_arg = params.details_arg
 	self.options = {
@@ -288,13 +286,12 @@ end
 --====================================================================--
 
 
-local CallDetails = inheritsFrom( ObjectBase )
-CallDetails.NAME = "Call Details"
+local CallDetails = newClass( ObjectBase, {name="Call Details"} )
 
-function CallDetails:_init( params )
-	-- print( "CallDetails:_init" )
+function CallDetails:__init__( params )
+	-- print( "CallDetails:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.progress = params.progress
 	self.caller = params.caller
@@ -309,6 +306,7 @@ end
 --====================================================================--
 --== Types Facade
 --====================================================================--
+
 
 return {
 	ComponentConfig=ComponentConfig,

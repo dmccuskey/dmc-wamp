@@ -8,26 +8,36 @@
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 --]]
+
+
+
+--====================================================================--
+--== DMC Corona Library : DMC WAMP
+--====================================================================--
+
 
 --[[
 Wamp support adapted from:
@@ -44,11 +54,11 @@ local VERSION = "1.0.0"
 --====================================================================--
 --== Imports
 
-local Objects = require 'lua_objects'
-local Utils = require 'lua_utils'
 
-local Errors = require 'dmc_wamp.exception'
-local ProtocolError = Errors.ProtocolErrorFactory
+local Objects = require 'dmc_objects'
+local Utils = require 'dmc_utils'
+
+local WErrors = require 'dmc_wamp.exception'
 
 
 
@@ -56,8 +66,11 @@ local ProtocolError = Errors.ProtocolErrorFactory
 --== Setup, Constants
 
 
+local ProtocolError = WErrors.ProtocolErrorFactory
+
+
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
+local newClass = Objects.newClass
 local ObjectBase = Objects.ObjectBase
 
 
@@ -67,8 +80,7 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local RoleFeatures = inheritsFrom( ObjectBase )
-RoleFeatures.NAME = "Role Features Base"
+local RoleFeatures = newClass( ObjectBase, { name="Role Features Base" } )
 
 RoleFeatures.ROLE = nil
 
@@ -121,14 +133,12 @@ end
 --====================================================================--
 
 
-local RoleCommonPubSubFeatures = inheritsFrom( RoleFeatures )
-RoleCommonPubSubFeatures.NAME = "Common Pub/Sub Feature"
+local RoleCommonPubSubFeatures = newClass( RoleFeatures, { name="Common Pub/Sub Feature" } )
 
-
-function RoleCommonPubSubFeatures:_init( params )
-	-- print( "RoleCommonPubSubFeatures:_init" )
+function RoleCommonPubSubFeatures:__init__( params )
+	-- print( "RoleCommonPubSubFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.publisher_identification = params.publisher_identification
 	self.partitioned_pubsub = params.partitioned_pubsub
@@ -140,6 +150,7 @@ end
 --== Broker-Role Features
 --====================================================================--
 
+
 -- not implemented
 
 
@@ -149,17 +160,14 @@ end
 --====================================================================--
 
 
-
-local RoleSubscriberFeatures = inheritsFrom( RoleCommonPubSubFeatures )
-RoleSubscriberFeatures.NAME = "Subscriber-Role Feature"
+local RoleSubscriberFeatures = newClass( RoleCommonPubSubFeatures, { name="Subscriber-Role Feature" } )
 
 RoleSubscriberFeatures.ROLE = 'subscriber'
 
-
-function RoleSubscriberFeatures:_init( params )
-	-- print( "RoleSubscriberFeatures:_init" )
+function RoleSubscriberFeatures:__init__( params )
+	-- print( "RoleSubscriberFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.publication_trustlevels = params.publication_trustlevels
 	self.pattern_based_subscription = params.pattern_based_subscription
@@ -168,8 +176,8 @@ function RoleSubscriberFeatures:_init( params )
 	self.event_history = params.event_history
 end
 
-function RoleSubscriberFeatures:_initComplete()
-	-- print( "RoleSubscriberFeatures:_initComplete" )
+function RoleSubscriberFeatures:__initComplete__()
+	-- print( "RoleSubscriberFeatures:__initComplete__" )
 	--==--
 	self:_check_all_bool()
 end
@@ -181,23 +189,21 @@ end
 --====================================================================--
 
 
-local RolePublisherFeatures = inheritsFrom( RoleCommonPubSubFeatures )
-RolePublisherFeatures.NAME = "Publisher-Role Feature"
+local RolePublisherFeatures = newClass( RoleCommonPubSubFeatures, { name="Publisher-Role Feature" } )
 
 RolePublisherFeatures.ROLE = 'publisher'
 
-
-function RolePublisherFeatures:_init( params )
-	-- print( "RolePublisherFeatures:_init" )
+function RolePublisherFeatures:__init__( params )
+	-- print( "RolePublisherFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.subscriber_blackwhite_listing = params.subscriber_blackwhite_listing
 	self.publisher_exclusion = params.publisher_exclusion
 end
 
-function RolePublisherFeatures:_initComplete()
-	-- print( "RolePublisherFeatures:_initComplete" )
+function RolePublisherFeatures:__initComplete__()
+	-- print( "RolePublisherFeatures:__initComplete__" )
 	--==--
 	self:_check_all_bool()
 end
@@ -209,14 +215,12 @@ end
 --====================================================================--
 
 
-local RoleCommonRpcFeatures = inheritsFrom( RoleFeatures )
-RoleCommonRpcFeatures.NAME = "Common RPC-Role Feature"
+local RoleCommonRpcFeatures = newClass( RoleFeatures, { name="Common RPC-Role Feature" } )
 
-
-function RoleCommonRpcFeatures:_init( params )
-	-- print( "RoleCommonRpcFeatures:_init" )
+function RoleCommonRpcFeatures:__init__( params )
+	-- print( "RoleCommonRpcFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.caller_identification = params.caller_identification
 	self.partitioned_rpc = params.partitioned_rpc
@@ -240,23 +244,21 @@ end
 --====================================================================--
 
 
-local RoleCallerFeatures = inheritsFrom( RoleCommonRpcFeatures )
-RoleCallerFeatures.NAME = "Caller-Role Feature"
+local RoleCallerFeatures = newClass( RoleCommonRpcFeatures, { name="Caller-Role Feature" } )
 
 RoleCallerFeatures.ROLE = 'caller'
 
-
-function RoleCallerFeatures:_init( params )
-	-- print( "RoleCallerFeatures:_init" )
+function RoleCallerFeatures:__init__( params )
+	-- print( "RoleCallerFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.callee_blackwhite_listing = params.callee_blackwhite_listing
 	self.caller_exclusion = params.caller_exclusion
 end
 
-function RoleCallerFeatures:_initComplete()
-	-- print( "RoleCallerFeatures:_initComplete" )
+function RoleCallerFeatures:__initComplete__()
+	-- print( "RoleCallerFeatures:__initComplete__" )
 	--==--
 	self:_check_all_bool()
 end
@@ -268,23 +270,21 @@ end
 --====================================================================--
 
 
-local RoleCalleeFeatures = inheritsFrom( RoleCommonRpcFeatures )
-RoleCalleeFeatures.NAME = "Callee-Role Feature"
+local RoleCalleeFeatures = newClass( RoleCommonRpcFeatures, { name="Callee-Role Feature" } )
 
 RoleCalleeFeatures.ROLE = 'callee'
 
-
-function RoleCalleeFeatures:_init( params )
-	-- print( "RoleCalleeFeatures:_init" )
+function RoleCalleeFeatures:__init__( params )
+	-- print( "RoleCalleeFeatures:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__init__', params )
 	--==--
 	self.call_trustlevels = params.call_trustlevels
 	self.pattern_based_registration = params.pattern_based_registration
 end
 
-function RoleCalleeFeatures:_initComplete()
-	-- print( "RoleCalleeFeatures:_initComplete" )
+function RoleCalleeFeatures:__initComplete__()
+	-- print( "RoleCalleeFeatures:__initComplete__" )
 	--==--
 	self:_check_all_bool()
 end

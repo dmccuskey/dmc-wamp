@@ -1,42 +1,44 @@
 --====================================================================--
--- dmc_wamp.lua
+-- dmc_corona/dmc_wamp.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 --]]
 
 
 
 --====================================================================--
--- DMC Corona Library : DMC WAMP
+--== DMC Corona Library : DMC WAMP
 --====================================================================--
 
+
 --[[
-Wamp support adapted from:
+WAMP support adapted from:
 * AutobahnPython (https://github.com/tavendo/AutobahnPython/)
 --]]
 
@@ -48,12 +50,14 @@ local VERSION = "1.0.0"
 
 
 --====================================================================--
--- DMC Corona Library Config
+--== DMC Corona Library Config
 --====================================================================--
 
 
+
 --====================================================================--
--- Support Functions
+--== Support Functions
+
 
 local Utils = {} -- make copying from dmc_utils easier
 
@@ -83,32 +87,35 @@ function Utils.extend( fromTable, toTable )
 end
 
 
+
 --====================================================================--
--- Configuration
+--== Configuration
 
-local dmc_lib_data, dmc_lib_info
 
--- boot dmc_library with boot script or
+local dmc_lib_data
+
+-- boot dmc_corona with boot script or
 -- setup basic defaults if it doesn't exist
 --
-if false == pcall( function() require( "dmc_corona_boot" ) end ) then
+if false == pcall( function() require( 'dmc_corona_boot' ) end ) then
 	_G.__dmc_corona = {
 		dmc_corona={},
 	}
 end
 
 dmc_lib_data = _G.__dmc_corona
-dmc_lib_info = dmc_lib_data.dmc_library
 
 
 
 --====================================================================--
--- DMC WAMP
+--== DMC WAMP
 --====================================================================--
 
 
+
 --====================================================================--
--- Configuration
+--== Configuration
+
 
 dmc_lib_data.dmc_wamp = dmc_lib_data.dmc_wamp or {}
 
@@ -124,16 +131,15 @@ local dmc_wamp_data = Utils.extend( dmc_lib_data.dmc_wamp, DMC_WAMP_DEFAULTS )
 --== Imports
 
 
-local Objects = require 'lua_objects'
-local States = require 'lua_states'
-local Utils = require 'lua_utils'
-
+local Objects = require 'dmc_objects'
+local LuaStatesMixin = require 'lib.dmc_lua.lua_states_mix'
+local Utils = require 'dmc_utils'
 local WebSocket = require 'dmc_websockets'
 
-local Error = require 'dmc_wamp.exception'
-local SerializerFactory = require 'dmc_wamp.serializer'
-local wprotocol = require 'dmc_wamp.protocol'
-local wtypes = require 'dmc_wamp.types'
+local WError = require 'dmc_wamp.exception'
+local WSerializerFactory = require 'dmc_wamp.serializer'
+local WProtocol = require 'dmc_wamp.protocol'
+local WTypes = require 'dmc_wamp.types'
 
 
 
@@ -141,8 +147,10 @@ local wtypes = require 'dmc_wamp.types'
 --== Setup, Constants
 
 
+local StatesMix = LuaStatesMixin.StatesMix
+
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
+local newClass = Objects.newClass
 
 -- local control of development functionality
 local LOCAL_DEBUG = false
@@ -154,8 +162,7 @@ local LOCAL_DEBUG = false
 --====================================================================--
 
 
-local Wamp = inheritsFrom( WebSocket )
-Wamp.NAME = "Wamp Connector"
+local Wamp = newClass( { WebSocket, StatesMix }, { name="WAMP Connector" } )
 
 --== Class Constants ==--
 
@@ -175,15 +182,16 @@ Wamp.ONDISCONNECT = 'wamp_on_disconnect_event'
 --======================================================--
 -- Start: Setup DMC Objects
 
-function Wamp:_init( params )
-	-- print( "Wamp:_init" )
+function Wamp:__init__( params )
+	-- print( "Wamp:__init__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( WebSocket, '__init__', params )
+	self:superCall( StatesMix, '__init__', params )
 	--==--
 
 	--== Sanity Check ==--
 
-	if self.is_intermediate then return end
+	if self.is_class then return end
 
 	assert( params.realm, "Wamp: requires parameter 'realm'" )
 	params.protocols = params.protocols or self.DEFAULT_PROTOCOL
@@ -198,7 +206,7 @@ function Wamp:_init( params )
 	end
 	--== Create Properties ==--
 
-	self._config = wtypes.ComponentConfig{
+	self._config = WTypes.ComponentConfig{
 		realm=params.realm,
 		extra=params.extra,
 		authid=params.user_id,
@@ -218,12 +226,12 @@ function Wamp:_init( params )
 end
 
 
-function Wamp:_initComplete()
-	-- print( "Wamp:_initComplete" )
-	self:superCall( '_initComplete' )
+function Wamp:__initComplete__()
+	-- print( "Wamp:__initComplete__" )
+	self:superCall( WebSocket, '__initComplete__' )
 
 	self._session_handler = self:createCallback( self._wampSessionEvent_handler )
-	self._serializer = SerializerFactory.create( 'json' )
+	self._serializer = WSerializerFactory.create( 'json' )
 
 end
 
@@ -293,7 +301,7 @@ function Wamp:unregister( handler, params )
 			function(e)
 				if type(e)=='string' then
 					error( e )
-				elseif e:isa( Error.ProtocolError ) then
+				elseif e:isa( WError.ProtocolError ) then
 					self:_bailout{
 						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
 						reason="WAMP Protocol Error"
@@ -332,7 +340,7 @@ function Wamp:publish( topic, params )
 			function(e)
 				if type(e)=='string' then
 					error( e )
-				elseif e:isa( Error.ProtocolError ) then
+				elseif e:isa( WError.ProtocolError ) then
 					print( e.traceback )
 					self:_bailout{
 						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
@@ -427,7 +435,7 @@ function Wamp:_onOpen()
 	-- TODO: match with protocol
 	-- capture errors (eg, one in Role.lua)
 
-	o = wprotocol.Session{ config=self._config }
+	o = WProtocol.Session{ config=self._config }
 	o:addEventListener( o.EVENT, self._session_handler )
 	self._session = o
 
@@ -440,7 +448,7 @@ function Wamp:_onOpen()
 			function(e)
 				if type(e)=='string' then
 					error( e )
-				elseif e:isa( Error.ProtocolError ) then
+				elseif e:isa( WError.ProtocolError ) then
 					print( e.traceback )
 					self:_bailout{
 						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
@@ -478,7 +486,7 @@ function Wamp:_onMessage( message )
 			function(e)
 				if type(e)=='string' then
 					error( e )
-				elseif e:isa( Error.ProtocolError ) then
+				elseif e:isa( WError.ProtocolError ) then
 					print( e.traceback )
 					self:_bailout{
 						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,

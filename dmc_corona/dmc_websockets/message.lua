@@ -1,5 +1,5 @@
 --====================================================================--
--- dmc_lua/lua_megaphone.lua
+-- dmc_corona/dmc_websockets/message.lua
 --
 -- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
@@ -8,7 +8,7 @@
 
 The MIT License (MIT)
 
-Copyright (c) 2013-2015 David McCuskey
+Copyright (C) 2014-2015 David McCuskey. All Rights Reserved.
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -33,13 +33,13 @@ SOFTWARE.
 
 
 --====================================================================--
---== DMC Lua Library : Lua Megaphone
+--== DMC Corona Library : DMC WebSockets Message
 --====================================================================--
 
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "1.1.0"
+local VERSION = "0.2.0"
 
 
 
@@ -47,8 +47,8 @@ local VERSION = "1.1.0"
 --== Imports
 
 
-local Objects = require 'lua_objects'
-local LuaEventsMixin = require 'lua_events_mix'
+local ByteArray = require 'lib.dmc_lua.lua_bytearray'
+local Objects = require 'dmc_objects'
 
 
 
@@ -58,71 +58,80 @@ local LuaEventsMixin = require 'lua_events_mix'
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local Class = Objects.Class
-
-local EventsMix = LuaEventsMixin.EventsMix
-local singleton = nil
+local ObjectBase = Objects.ObjectBase
 
 
 
 --====================================================================--
---== Megaphone Class
+--== WebSocket Message Class
 --====================================================================--
 
 
-local Megaphone = newClass( { Class, EventsMix }, { name="Lua Megaphone" } )
-
---== Event Constants ==--
-
-Megaphone.EVENT = 'megaphone_event'
+local Message = newClass( ObjectBase, { name="WebSocket Message" } )
 
 
---======================================================--
--- Start: Setup Lua Objects
+--==================================================--
+-- Start: Setup DMC Objects
 
-function Megaphone:__new__( ... )
-	-- print( "Megaphone:__new__" )
-	EventsMix.__init__( self, ... )
+function Message:__init__( params )
+	-- print( "Message:__init__" )
+	params = params or {}
+	self:superCall( '__init__', params )
+	--==--
+
+	--== Create Properties ==--
+
+	self.masked = params.masked
+	self.opcode = params.opcode
+	self._bytearray = nil
+
+	self._data = params.data -- tmp
+
 end
 
---[[
-function Megaphone:__destroy__( ... )
-	-- print( "Megaphone:__destroy__" )
-	EventsMix.__undoInit__( self )
-end
---]]
+function Message:__initComplete__()
+	-- print( "Message:__initComplete__" )
+	self:superCall( '__initComplete__' )
+	--==--
 
--- END: Setup Lua Objects
---======================================================--
+	local ba = ByteArray:new()
+	ba:writeBuf( self._data )
+	self._bytearray = ba
+	self._data = nil -- erase tmp
+
+end
+
+-- END: Setup DMC Objects
+--==================================================--
+
 
 
 --====================================================================--
 --== Public Methods
 
 
-function Megaphone:say( message, params )
-	-- print( "Megaphone:say ", message )
-	params = params or {}
-	assert( type(message)=='string', "Megaphone:say, arg 'message' must be a string" )
-	assert( type(params)=='table', "Megaphone:say, arg 'params' must be a table" )
-	--==--
-	self:dispatchEvent( message, params )
-end
-function Megaphone:listen( listener )
-	-- print( "Megaphone:listen " )
-	assert( type(listener)=='function', "Megaphone:say, arg 'listener' must be a function" )
-	--==--
-	self:addEventListener( Megaphone.EVENT, listener )
-end
-function Megaphone:ignore( listener )
-	-- print( "Megaphone:ignore " )
-	assert( type(listener)=='function', "Megaphone:say, arg 'listener' must be a function" )
-	--==--
-	self:removeEventListener( Megaphone.EVENT, listener )
+function Message.__getters:start()
+	-- print( "Message.__getters:start" )
+	return self._bytearray.position
 end
 
 
+function Message:getAvailable()
+	-- print( "Message:getAvailable" )
+	return self._bytearray.bytesAvailable
+end
 
-singleton = Megaphone:new()
+-- reads chunk of data. if value > available data
+-- or value==nil then return all data
+--
+function Message:read( value )
+	-- print( "Message:read", value )
+	local avail = self:getAvailable()
+	if value > avail or value == nil then value = avail end
+	return self._bytearray:readBuf( value )
+end
 
-return singleton
+
+
+
+return Message

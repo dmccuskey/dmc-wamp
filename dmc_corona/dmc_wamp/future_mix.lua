@@ -1,38 +1,46 @@
 --====================================================================--
 -- dmc_wamp/future_mix.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
 
 --]]
 
 
+
 --====================================================================--
--- DMC Corona Library : Future Mix
+--== DMC Corona Library : DMC WAMP Future Mix
 --====================================================================--
+
+
+--[[
+WAMP support adapted from:
+* AutobahnPython (https://github.com/tavendo/AutobahnPython/)
+--]]
 
 
 -- Semantic Versioning Specification: http://semver.org/
@@ -40,31 +48,36 @@ DEALINGS IN THE SOFTWARE.
 local VERSION = "1.0.0"
 
 
---====================================================================--
--- Imports
-
-local Promise = require 'lua_promise'
-
 
 --====================================================================--
--- Setup, Constants
+--== Imports
+
+
+local Promise = require 'lib.dmc_lua.lua_promise'
+
+
+
+--====================================================================--
+--== Setup, Constants
+
 
 local Deferred, maybeDeferred = Promise.Deferred, Promise.maybeDeferred
 
 
 
 --====================================================================--
--- Future Mix Container
+--== Future Mix Container
 --====================================================================--
 
 
 local FutureMixin = {}
 
-FutureMixin._DEBUG = false
+FutureMixin.__debug = false
 
 
 --====================================================================--
--- Public Functions
+--== Public Functions
+
 
 function FutureMixin.create_future( self )
 	return Deferred:new()
@@ -92,11 +105,11 @@ end
 --== Facade API Methods ==--
 
 function FutureMixin._setDebug( value )
-	States._DEBUG = value
+	FutureMixin.__debug = value
 end
 
 function FutureMixin._mixin( obj )
-	if FutureMixin._DEBUG then
+	if FutureMixin.__debug then
 		print( "WAMP FutureMixin::mixin: ", obj.NAME )
 	end
 
@@ -117,7 +130,7 @@ end
 
 
 --====================================================================--
--- Future Facade
+--== Future Facade
 --====================================================================--
 
 
