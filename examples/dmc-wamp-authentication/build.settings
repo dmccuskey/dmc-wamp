@@ -1,0 +1,20 @@
+settings =
+{
+
+	plugins =
+	{
+		['plugin.bit'] =
+		{
+			publisherId = 'com.coronalabs
+		}
+	},
+
+	android =
+	{
+		usesPermissions =
+		{
+			'android.permission.INTERNET'
+		}
+	}
+
+}
