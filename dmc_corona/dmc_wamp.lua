@@ -153,7 +153,7 @@ local StatesMix = LuaStatesMixin.StatesMix
 local newClass = Objects.newClass
 
 -- local control of development functionality
-local LOCAL_DEBUG = false
+local LOCAL_DEBUG = dmc_wamp_data.debug_active~=nil and dmc_wamp_data.debug_active or false
 
 
 
@@ -384,7 +384,7 @@ function Wamp:send( msg )
 	--==--
 	local bytes, is_binary = self._serializer:serialize( msg )
 
-	if LOCAL_DEBUG then print( 'sending', bytes ) end
+	if LOCAL_DEBUG then print( 'dmc_wamp:send() :: sending', bytes ) end
 
 	self:superCall( 'send', bytes, { type=is_binary } )
 end
