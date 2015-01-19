@@ -23,7 +23,10 @@ module_config = {
 			"dmc_wamp/utils.lua"
 		],
 		"requires": [
-			"DMC-Lua-Library"
+			"DMC-Lua-Library",
+			"dmc-websockets",
+			"dmc-objects",
+			"dmc-utils"
 		]
 	},
 	"examples": {
