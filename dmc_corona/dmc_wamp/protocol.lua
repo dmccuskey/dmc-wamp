@@ -121,7 +121,6 @@ function Handler:__init__( params )
 	params = params or {}
 	self:superCall( '__init__', params )
 	--==--
-	assert( params.obj )
 	assert( params.fn )
 	assert( params.topic )
 
@@ -129,6 +128,11 @@ function Handler:__init__( params )
 	self.fn = params.fn
 	self.topic = params.topic
 	self.details_arg = params.details_arg
+
+	-- this addition is for more Corona-ism
+	-- used in added unsubscribe() method to Session
+	self.subscription = params.subscription
+	
 end
 
 
@@ -943,13 +947,16 @@ function Session:subscribe( topic, callback )
 end
 
 
+--[[
+This is an addition specifically for Corona SDK
+it's more of a Corona-ism
+--]]
 function Session:unsubscribe( topic, callback )
 	-- print( "Session:unsubscribe", topic, callback )
 
-	for i, sub in pairs( self._subscriptions ) do
-		local handler = sub.handler
+	for _, handler in pairs( self._subscriptions ) do
 		if handler.topic == topic and handler.fn == callback then
-			sub:unsubscribe()
+			handler.subscription:unsubscribe()
 			break
 		end
 	end
