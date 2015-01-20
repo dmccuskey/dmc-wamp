@@ -58,7 +58,7 @@ local Objects = require 'dmc_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
 local Utils = require 'dmc_utils'
 
-local WErrors = require 'dmc_wamp.exception'
+local WError = require 'dmc_wamp.exception'
 local WFutureMixin = require 'dmc_wamp.future_mix'
 local WMessageFactory = require 'dmc_wamp.message'
 local WRole = require 'dmc_wamp.role'
@@ -72,8 +72,6 @@ local WUtils = require 'dmc_wamp.utils'
 
 
 Patch.addPatch( 'table-pop' )
-
-local ProtocolError = WErrors.ProtocolErrorFactory
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
@@ -532,7 +530,7 @@ function Session:onMessage( msg )
 			local onChallenge_f = self.config.onchallenge
 
 			if type( onChallenge_f ) ~= 'function' then
-				error( ProtocolError( "Received %s incorrect onChallenge" % 'fdsf' ) )
+				error( WError.ProtocolError( "Received %s incorrect onChallenge" % 'fdsf' ) )
 			end
 
 			challenge = WTypes.Challenge{
@@ -557,7 +555,7 @@ function Session:onMessage( msg )
 
 
 		else
-			error( ProtocolError( "Received %s message, and session is not yet established" % msg.NAME ) )
+			error( WError.ProtocolError( "Received %s message, and session is not yet established" % msg.NAME ) )
 		end
 
 		return
@@ -582,7 +580,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Event ) then
 
 		if not self._subscriptions[ msg.subscription ] then
-			error( ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
+			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
 		end
 
 		local sub = self._subscriptions[ msg.subscription ]
@@ -603,7 +601,8 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Published ) then
 
 		if not self._publish_reqs[ msg.request ] then
-			error( ProtocolError( "PUBLISHED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "PUBLISHED received for non-pending request ID" ) )
+			return
 		end
 
 		local pub_req = tpop( self._publish_reqs, msg.request )
@@ -618,7 +617,8 @@ function Session:onMessage( msg )
 		-- print("onMessage:Subscribed")
 
 		if not self._subscribe_reqs[ msg.request ] then
-			error( ProtocolError( "SUBSCRIBED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "SUBSCRIBED received for non-pending request ID" ) )
+			return
 		end
 
 		local sub_req = tpop( self._subscribe_reqs, msg.request )
@@ -654,7 +654,8 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Result ) then
 
 		if not self._call_reqs[ msg.request ] then
-			error( ProtocolError( "RESULT received for non-pending request ID" ) )
+			error( WError.ProtocolError( "RESULT received for non-pending request ID" ) )
+			return
 		end
 
 		local call_req
@@ -686,11 +687,13 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Invocation ) then
 
 		if self._invocations[ msg.request ] then
-			error( ProtocolError( "Invocation: already received request for this id" ) )
+			error( WError.ProtocolError( "Invocation: already received request for this id" ) )
+			return
 		end
 
 		if not self._registrations[ msg.registration ] then
-			error( ProtocolError( "Invocation: don't have this registration ID" ) )
+			error( WError.ProtocolError( "Invocation: don't have this registration ID" ) )
+			return
 		end
 
 		local registration = self._registrations[ msg.registration ]
@@ -749,7 +752,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Registered ) then
 
 		if not self._register_reqs[ msg.request ] then
-			error( ProtocolError( "REGISTERED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "REGISTERED received for non-pending request ID" ) )
 		end
 
 		local reg_req = tpop( self._register_reqs, msg.request )
@@ -775,7 +778,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Unregistered ) then
 
 		if not self._unregister_reqs[ msg.request ] then
-			error( ProtocolError( "UNREGISTERED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "UNREGISTERED received for non-pending request ID" ) )
 		end
 
 		local unreg_req = tpop( self._unregister_reqs, msg.request )
@@ -884,7 +887,7 @@ function Session:publish( topic, params )
 	assert( topic )
 
 	if not self._transport then
-		error( TransportError() )
+		error( WError.TransportError() )
 	end
 
 	local options = params.options or {}
@@ -920,7 +923,7 @@ function Session:subscribe( topic, callback )
 	assert( topic )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	-- TODO: register on object
@@ -960,7 +963,7 @@ function Session:_unsubscribe( subscription )
 	-- print( "Session:_unsubscribe", subscription )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local request, msg
@@ -983,7 +986,7 @@ function Session:call( procedure, params )
 	--==--
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local request, msg
@@ -1013,7 +1016,7 @@ function Session:register( endpoint, params )
 	--==--
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local function _register( obj, endpoint, procedure, options )
@@ -1074,7 +1077,7 @@ function Session:_unregister( registration )
 	assert( self._registrations[ registration.id ] )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local request, def, msg
