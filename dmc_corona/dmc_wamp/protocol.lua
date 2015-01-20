@@ -178,15 +178,10 @@ function Subscription:__init__( params )
 	--==--
 	assert( params.session )
 	assert( params.subscription_id )
-	assert( params.topic )
 
 	self._session = params.session
 	self.id = params.subscription_id
 	self.active = true
-
-	-- this is a shortcut i put in the code
-	-- autobahn handles it another way
-	self.handler = params.handler
 end
 
 -- Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
@@ -495,7 +490,7 @@ end
 -- Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
 --
 function Session:onMessage( msg )
-	-- print( "Session:onMessage", self )
+	-- print( "Session:onMessage", msg )
 
 	if self._session_id == nil then
 
@@ -587,17 +582,21 @@ function Session:onMessage( msg )
 			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
 		end
 
-		local sub = self._subscriptions[ msg.subscription ]
-		local p, handler
+		local handler = self._subscriptions[ msg.subscription ]
 
 		-- TODO: event details
 
-		p = {
+		local evt = {
 			args=msg.args,
 			kwargs=msg.kwargs
 		}
-		handler = sub.handler
-		if handler.fn then handler.fn( p ) end
+		if handler.obj then
+			handler.fn( handler.obj, evt )
+		else
+			handler.fn( evt )
+		end
+
+		-- TODO: exception handling
 
 
 	--== Published Message
@@ -626,26 +625,22 @@ function Session:onMessage( msg )
 		end
 
 		local sub_req = tpop( self._subscribe_reqs, msg.request )
-		local func, topic = unpack( sub_req )
+		local def, obj, func, topic, options = unpack( sub_req )
 
-		local handler = Handler:new{
+		local sub = Subscription:new{
+			session=self,
+			subscription_id=msg.subscription
+		}
+
+		self._subscriptions[ msg.subscription ] = Handler:new{
+			obj=obj,
 			fn=func,
 			topic=topic,
-			details_arg=nil
+			details_arg=options.details_arg,
+			subscription=sub
 		}
 
-		self._subscriptions[ msg.subscription ] = Subscription:new{
-			session=self,
-			id=msg.subscription,
-			handler=handler
-		}
-
-		-- TODO: send subscribed notice
-		-- p = {
-		-- 	args=msg.args,
-		-- 	kwargs=msg.kwargs
-		-- }
-		-- if sub_req.eventHandler then sub_req.eventHandler( p ) end
+		self:_resolve_future( def, sub )
 
 
 	--== Unsubscribed Message
@@ -921,9 +916,10 @@ end
 
 -- Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
 --
-function Session:subscribe( topic, callback )
-	-- print( "Session:subscribe", topic )
-
+function Session:subscribe( topic, handler, params )
+	-- print( "Session:subscribe", topic, handler, params )
+	params = params or {}
+	--==--
 	assert( topic )
 
 	if not self._transport then
@@ -933,16 +929,33 @@ function Session:subscribe( topic, callback )
 	-- TODO: register on object
 	-- TODO: change onEvent, onSubscribe ? add params to array
 
-	local request, msg
+	local function _subscribe(obj, handler, topic, prms)
+		local request, def, msg
 
-	request = WUtils.id()
-	self._subscribe_reqs[ request ] = { callback, topic }
+		request = WUtils.id()
+		def = self:_create_future()
+		self._subscribe_reqs[ request ] = { def, obj, handler, topic, prms }
 
-	msg = WMessageFactory.Subscribe:new{
-		request = request,
-		topic = topic,
-	}
-	self._transport:send( msg )
+		if prms.onSuccess or prms.onError then
+			def:addCallbacks( prms.onSuccess, prms.onError )
+		end
+
+		msg = WMessageFactory.Subscribe:new{
+			request=request,
+			topic=topic,
+			options=prms.options
+		}
+		self._transport:send( msg )
+
+		return def
+	end
+
+	if type(handler)=='function' then
+		return _subscribe( nil, handler, topic, params )
+	else
+		error( "to be implemented" )
+	end
+
 
 end
 
@@ -968,6 +981,11 @@ end
 --
 function Session:_unsubscribe( subscription )
 	-- print( "Session:_unsubscribe", subscription )
+	--==--
+
+	assert( subscription:isa( Subscription ) )
+	assert( subscription.active )
+	assert( self._subscriptions[subscription.id]~=nil )
 
 	if not self._transport then
 		error( WError.TransportLostError() )
@@ -978,7 +996,7 @@ function Session:_unsubscribe( subscription )
 	request = WUtils.id()
 	msg = WMessageFactory.Unsubscribe:new{
 		request=request,
-		subscription_id = subscription.id
+		subscription=subscription.id
 	}
 	self._transport:send( msg )
 
