@@ -89,7 +89,7 @@ local tpop = table.pop
 --[[
 --]]
 
-local Endpoint = newClass( ObjectBase )
+local Endpoint = newClass( ObjectBase, {name="Endpoint"} )
 
 function Endpoint:__init__( params )
 	params = params or {}
@@ -115,7 +115,7 @@ end
 --[[
 --]]
 
-local Handler = newClass( ObjectBase )
+local Handler = newClass( ObjectBase, {name="Handler"} )
 
 function Handler:__init__( params )
 	params = params or {}
@@ -143,7 +143,7 @@ Object representing a publication.
 This class implements :class:`autobahn.wamp.interfaces.IPublication`.
 --]]
 
-local Publication = newClass( ObjectBase )
+local Publication = newClass( ObjectBase, {name="Publication"} )
 
 function Publication:__init__( params )
 	params = params or {}
@@ -166,7 +166,7 @@ Object representing a subscription.
 This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
 --]]
 
-local Subscription = newClass( ObjectBase )
+local Subscription = newClass( ObjectBase, {name="Subscription"} )
 
 function Subscription:__init__( params )
 	params = params or {}
@@ -204,7 +204,7 @@ Object representing a registration.
 This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
 --]]
 
-local Registration = newClass( ObjectBase )
+local Registration = newClass( ObjectBase, {name="Registration"} )
 
 function Registration:__init__( params )
 	params = params or {}
@@ -244,7 +244,7 @@ This class implements:
 :class:`autobahn.wamp.interfaces.ISession`
 --]]
 
-local BaseSession = newClass( ObjectBase )
+local BaseSession = newClass( ObjectBase, {name="Base Session"} )
 
 function BaseSession:__init__( params )
 	params = params or {}
