@@ -1219,14 +1219,14 @@ function Event.parse( wmsg )
 
 
 	if #wmsg > 4 then
-		args = wmsg[4]
+		args = wmsg[5]
 		if type(args) ~= 'table' then
 			error( ProtocolError( "invalid type 'args' in EVENT" ) )
 		end
 	end
 
 	if #wmsg > 5 then
-		kwargs = wmsg[5]
+		kwargs = wmsg[6]
 		if type(kwargs) ~= 'table' then
 			error( ProtocolError( "invalid type 'kwargs' in EVENT" ) )
 		end
@@ -1239,11 +1239,10 @@ function Event.parse( wmsg )
 		end
 	end
 
-
 	return Event{
 		subscription=subscription,
 		publication=publication,
-		-- details = wmsg[4],
+		details=details,
 		args=args,
 		kwargs=kwargs,
 		publisher=publisher,
