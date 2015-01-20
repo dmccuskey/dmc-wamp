@@ -363,9 +363,9 @@ end
 -- @param topic string of "channel" to subscribe to
 -- @param handler function callback
 --
-function Wamp:subscribe( topic, handler )
+function Wamp:subscribe( topic, handler, params )
 	-- print( "Wamp:subscribe", topic )
-	return self._session:subscribe( topic, handler )
+	return self._session:subscribe( topic, handler, params )
 end
 
 -- unsubscribe()
