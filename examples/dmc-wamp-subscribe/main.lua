@@ -47,40 +47,50 @@ local wamp -- ref to WAMP object
 
 
 local doWampPubSub = function()
-	print( ">> WAMP:doWampPubSub" )
+	-- print( ">> WAMP:doWampPubSub" )
 
 	local topic = WAMP_PUBSUB_TOPIC
-	local subscription
 
 	local subscriptionEvent_handler = function( event )
-		print( ">> WAMP PubSub::subscription Event handler" )
+		-- print( ">> WAMP PubSub::subscription Event handler", event.type )
+		local etype = event.type
 
-		if event.is_error then
-			-- could be issue with subscription request
-			-- or network close (maybe)
-		else
-			local args, kwargs = event.args, event.kwargs
-			-- print( args, kwargs )
-			print( "Received: ", args[1] )
+		if etype == Wamp.ONSUBSCRIBED then
+			print( "WAMP: successful SUBSCRIBE" )
+
+			-- if event.is_error then
+			-- else
+			-- end
+
+		elseif etype == Wamp.ONPUBLISH then
+			print( "WAMP: received PUBLISH" )
+
+			if event.is_error then
+				-- could be issue with subscription request
+				-- or network close (maybe)
+			else
+				local args, kwargs = event.args, event.kwargs
+				-- print( args, kwargs )
+				print( "Received: ", args[1] )
+			end
+
+		elseif etype == Wamp.ONUNSUBSCRIBED then
+			print( "WAMP: successful UNSUBSCRIBE" )
+
+			-- if event.is_error then
+			-- else
+			-- end
+
 		end
-	end
 
-	local subOnSuccess = function( sub )
-		-- sub is 'Subscription' object
-		print( "WAMP: successful subscription", sub )
-		subscription = sub
-	end
-	local subOnError = function(e)
-		print( "WAMP: error with subscription" )
-	end
+	end -- subscriptionEvent_handler
 
 	-- subscribe to topic
-	local deferred = wamp:subscribe( topic, subscriptionEvent_handler, {onSuccess=subOnSuccess, onError=subOnError} )
+	wamp:subscribe( topic, subscriptionEvent_handler )
 
 	-- unsubscribe from topic
 	local unsub = function( e )
-		-- wamp:unsubscribe( topic, subscriptionEvent_handler )
-		subscription:unsubscribe()
+		wamp:unsubscribe( topic, subscriptionEvent_handler )
 	end
 	timer.performWithDelay( 5000, unsub )
 
@@ -97,18 +107,17 @@ end
 
 
 local wampEvent_handler = function( event )
-	print( ">> wampEvent_handler", event.type )
-
+	-- print( ">> wampEvent_handler", event.type )
 
 	if event.type == wamp.ONJOIN then
-		print( ">> We have WAMP Join" )
+		print( ">> We have WAMP JOIN" )
 		doWampPubSub()
 
 	elseif event.type == wamp.ONDISCONNECT then
-		print( ">> We have WAMP Disconnect" )
+		print( ">> We have WAMP DISCONNECT" )
 
 	elseif event.type == wamp.ONERROR then
-		print( ">> We have WAMP Error" )
+		print( ">> We have WAMP ERROR" )
 		Utils.print( event )
 
 	end

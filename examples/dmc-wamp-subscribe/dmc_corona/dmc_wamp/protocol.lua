@@ -54,9 +54,10 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
+local Objects = require 'lib.dmc_lua.lua_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
-local Utils = require 'dmc_utils'
+local LuaEventsMixin = require 'lib.dmc_lua.lua_events_mix'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 local WError = require 'dmc_wamp.exception'
 local WFutureMixin = require 'dmc_wamp.future_mix'
@@ -73,9 +74,12 @@ local WUtils = require 'dmc_wamp.utils'
 
 Patch.addPatch( 'table-pop' )
 
+local EventsMix = LuaEventsMixin.EventsMix
+local FutureMix = WFutureMixin.FutureMix
+
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
+local Class = Objects.Class
 
 local tpop = table.pop
 
@@ -89,11 +93,11 @@ local tpop = table.pop
 --[[
 --]]
 
-local Endpoint = newClass( ObjectBase, {name="Endpoint"} )
+local Endpoint = newClass( nil, {name="Endpoint"} )
 
-function Endpoint:__init__( params )
+function Endpoint:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.obj )
 	assert( params.fn )
@@ -115,11 +119,11 @@ end
 --[[
 --]]
 
-local Handler = newClass( ObjectBase, {name="Handler"} )
+local Handler = newClass( nil, {name="Handler"} )
 
-function Handler:__init__( params )
+function Handler:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.fn )
 	assert( params.topic )
@@ -132,6 +136,7 @@ function Handler:__init__( params )
 	-- this addition is for more Corona-ism
 	-- used in added unsubscribe() method to Session
 	self.subscription = params.subscription
+
 end
 
 
@@ -146,11 +151,11 @@ Object representing a publication.
 This class implements :class:`autobahn.wamp.interfaces.IPublication`.
 --]]
 
-local Publication = newClass( ObjectBase, {name="Publication"} )
+local Publication = newClass( nil, {name="Publication"} )
 
-function Publication:__init__( params )
+function Publication:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.publication_id )
 
@@ -169,11 +174,11 @@ Object representing a subscription.
 This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
 --]]
 
-local Subscription = newClass( ObjectBase, {name="Subscription"} )
+local Subscription = newClass( nil, {name="Subscription"} )
 
-function Subscription:__init__( params )
+function Subscription:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.subscription_id )
@@ -202,11 +207,11 @@ Object representing a registration.
 This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
 --]]
 
-local Registration = newClass( ObjectBase, {name="Registration"} )
+local Registration = newClass( nil, {name="Registration"} )
 
-function Registration:__init__( params )
+function Registration:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.registration_id )
@@ -242,11 +247,12 @@ This class implements:
 :class:`autobahn.wamp.interfaces.ISession`
 --]]
 
-local BaseSession = newClass( ObjectBase, {name="Base Session"} )
+local BaseSession = newClass( { Class, EventsMix }, {name="Base Session"} )
 
-function BaseSession:__init__( params )
+function BaseSession:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	Class.__new__( self, params )
+	EventsMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--
@@ -350,9 +356,7 @@ This class implements:
 ?? * :class:`autobahn.wamp.interfaces.ITransportHandler`
 --]]
 
-local Session = newClass( BaseSession, { name="WAMP Session" } )
-
-WFutureMixin.mixin( Session )
+local Session = newClass( { BaseSession, FutureMix }, { name="WAMP Session" } )
 
 --== Event Constants ==--
 
@@ -365,10 +369,11 @@ Session.ONCHALLENGE = 'on_challenge_wamp_event'
 --======================================================--
 -- Start: Setup DMC Objects
 
-function Session:__init__( params )
-	-- print( "Session:__init__" )
+function Session:__new__( params )
+	-- print( "Session:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	BaseSession.__new__( self, params )
+	FutureMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--
@@ -489,7 +494,7 @@ end
 -- Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
 --
 function Session:onMessage( msg )
-	-- print( "Session:onMessage", self, msg )
+	-- print( "Session:onMessage", msg )
 
 	if self._session_id == nil then
 
@@ -578,7 +583,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Event ) then
 
 		if not self._subscriptions[ msg.subscription ] then
-			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
+			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID" ) )
 		end
 
 		local handler = self._subscriptions[ msg.subscription ]
@@ -609,8 +614,9 @@ function Session:onMessage( msg )
 
 		local pub_req = tpop( self._publish_reqs, msg.request )
 		local def, opts = unpack( pub_req )
+		local pub = Publication:new{ publication=msg.publication }
 
-		self:_resolve_future( def, Publication:new({ publication_id=msg.publication }) )
+		self:_resolve_future( def, pub )
 
 
 	--== Subscribed Message
@@ -645,6 +651,19 @@ function Session:onMessage( msg )
 	--== Unsubscribed Message
 
 	elseif msg:isa( WMessageFactory.Unsubscribed ) then
+
+		if not self._unsubscribe_reqs[ msg.request ] then
+			error( WError.ProtocolError( "UNSUBSCRIBED received for non-pending request ID" ) )
+			return
+		end
+
+		local unsub_req = tpop( self._unsubscribe_reqs, msg.request )
+		local def, sub = unpack( unsub_req )
+
+		self._subscriptions[sub.id] = nil
+		sub.active = false
+
+		self:_resolve_future( def )
 
 
 	--== Result Message
@@ -888,28 +907,32 @@ function Session:publish( topic, params )
 		error( WError.TransportError() )
 	end
 
-	local options = params.options or {}
+	local opts = params.options or {}
 	local request = WUtils.id()
-	local msg = WMessageFactory.Publish:new{
+	local msg, p
+	p = {
 		request=request,
 		topic=topic,
-		options=options,
 		args=params.args,
 		kwargs=params.kwargs
 	}
+	-- layer in publish message options
+	if opts.options then
+		p = Utils.extend( opts.options, p )
+	end
 
-	if options.acknowledge == true then
+	msg = WMessageFactory.Publish:new( p )
+
+	if opts.acknowledge == true then
 		local def = self:_create_future()
-		if params.onSuccess or params.onError then
-			def:addCallbacks( params.onSuccess, params.onError )
-		end
-		self._publish_reqs[ request ] = { def, options }
+		self._publish_reqs[ request ] = { def, opts }
 		self._transport:send( msg )
+		return def
 	else
 		self._transport:send( msg )
 		return
-
 	end
+
 end
 
 
@@ -934,10 +957,6 @@ function Session:subscribe( topic, handler, params )
 		request = WUtils.id()
 		def = self:_create_future()
 		self._subscribe_reqs[ request ] = { def, obj, handler, topic, prms }
-
-		if prms.onSuccess or prms.onError then
-			def:addCallbacks( prms.onSuccess, prms.onError )
-		end
 
 		msg = WMessageFactory.Subscribe:new{
 			request=request,
@@ -981,7 +1000,6 @@ end
 function Session:_unsubscribe( subscription )
 	-- print( "Session:_unsubscribe", subscription )
 	--==--
-
 	assert( subscription:isa( Subscription ) )
 	assert( subscription.active )
 	assert( self._subscriptions[subscription.id]~=nil )
@@ -990,14 +1008,20 @@ function Session:_unsubscribe( subscription )
 		error( WError.TransportLostError() )
 	end
 
-	local request, msg
+	local def, request, msg
 
 	request = WUtils.id()
+	def = self:_create_future()
+
+	self._unsubscribe_reqs[request] = { def, subscription }
+
 	msg = WMessageFactory.Unsubscribe:new{
 		request=request,
 		subscription=subscription.id
 	}
 	self._transport:send( msg )
+
+	return def
 
 end
 

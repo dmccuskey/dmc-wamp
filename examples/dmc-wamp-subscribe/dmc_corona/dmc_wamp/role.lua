@@ -55,8 +55,8 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 local WErrors = require 'dmc_wamp.exception'
 
@@ -66,12 +66,8 @@ local WErrors = require 'dmc_wamp.exception'
 --== Setup, Constants
 
 
-local ProtocolError = WErrors.ProtocolErrorFactory
-
-
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
 
 
 
@@ -80,7 +76,7 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local RoleFeatures = newClass( ObjectBase, { name="Role Features Base" } )
+local RoleFeatures = newClass( nil, { name="Role Features Base" } )
 
 RoleFeatures.ROLE = nil
 
@@ -108,7 +104,7 @@ function RoleFeatures:_check_all_bool()
 	for k,v in pairs( attrs ) do
 		-- print("checking", k, v )
 		if type(v) ~= 'boolean' then
-			error( ProtocolError( "invalid type '%s' for feature '%s' for role '%s'" % {type(v), k, self.ROLE } ) )
+			error( WErrors.ProtocolError( "invalid type '%s' for feature '%s' for role '%s'" % {type(v), k, self.ROLE } ) )
 		end
 	end
 
@@ -135,10 +131,10 @@ end
 
 local RoleCommonPubSubFeatures = newClass( RoleFeatures, { name="Common Pub/Sub Feature" } )
 
-function RoleCommonPubSubFeatures:__init__( params )
-	-- print( "RoleCommonPubSubFeatures:__init__" )
+function RoleCommonPubSubFeatures:__new__( params )
+	-- print( "RoleCommonPubSubFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.publisher_identification = params.publisher_identification
 	self.partitioned_pubsub = params.partitioned_pubsub
@@ -164,23 +160,25 @@ local RoleSubscriberFeatures = newClass( RoleCommonPubSubFeatures, { name="Subsc
 
 RoleSubscriberFeatures.ROLE = 'subscriber'
 
-function RoleSubscriberFeatures:__init__( params )
-	-- print( "RoleSubscriberFeatures:__init__" )
+function RoleSubscriberFeatures:__new__( params )
+	-- print( "RoleSubscriberFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.publication_trustlevels = params.publication_trustlevels
 	self.pattern_based_subscription = params.pattern_based_subscription
 	self.subscriber_metaevents = params.subscriber_metaevents
 	self.subscriber_list = params.subscriber_list
 	self.event_history = params.event_history
-end
 
-function RoleSubscriberFeatures:__initComplete__()
-	-- print( "RoleSubscriberFeatures:__initComplete__" )
-	--==--
 	self:_check_all_bool()
 end
+
+-- function RoleSubscriberFeatures:__initComplete__()
+-- 	-- print( "RoleSubscriberFeatures:__initComplete__" )
+-- 	--==--
+-- 	self:_check_all_bool()
+-- end
 
 
 
@@ -193,20 +191,22 @@ local RolePublisherFeatures = newClass( RoleCommonPubSubFeatures, { name="Publis
 
 RolePublisherFeatures.ROLE = 'publisher'
 
-function RolePublisherFeatures:__init__( params )
-	-- print( "RolePublisherFeatures:__init__" )
+function RolePublisherFeatures:__new__( params )
+	-- print( "RolePublisherFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.subscriber_blackwhite_listing = params.subscriber_blackwhite_listing
 	self.publisher_exclusion = params.publisher_exclusion
-end
 
-function RolePublisherFeatures:__initComplete__()
-	-- print( "RolePublisherFeatures:__initComplete__" )
-	--==--
 	self:_check_all_bool()
 end
+
+-- function RolePublisherFeatures:__initComplete__()
+-- 	-- print( "RolePublisherFeatures:__initComplete__" )
+-- 	--==--
+-- 	self:_check_all_bool()
+-- end
 
 
 
@@ -217,10 +217,10 @@ end
 
 local RoleCommonRpcFeatures = newClass( RoleFeatures, { name="Common RPC-Role Feature" } )
 
-function RoleCommonRpcFeatures:__init__( params )
-	-- print( "RoleCommonRpcFeatures:__init__" )
+function RoleCommonRpcFeatures:__new__( params )
+	-- print( "RoleCommonRpcFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.caller_identification = params.caller_identification
 	self.partitioned_rpc = params.partitioned_rpc
@@ -248,20 +248,22 @@ local RoleCallerFeatures = newClass( RoleCommonRpcFeatures, { name="Caller-Role 
 
 RoleCallerFeatures.ROLE = 'caller'
 
-function RoleCallerFeatures:__init__( params )
-	-- print( "RoleCallerFeatures:__init__" )
+function RoleCallerFeatures:__new__( params )
+	-- print( "RoleCallerFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.callee_blackwhite_listing = params.callee_blackwhite_listing
 	self.caller_exclusion = params.caller_exclusion
-end
 
-function RoleCallerFeatures:__initComplete__()
-	-- print( "RoleCallerFeatures:__initComplete__" )
-	--==--
 	self:_check_all_bool()
 end
+
+-- function RoleCallerFeatures:__initComplete__()
+-- 	-- print( "RoleCallerFeatures:__initComplete__" )
+-- 	--==--
+-- 	self:_check_all_bool()
+-- end
 
 
 
@@ -274,20 +276,22 @@ local RoleCalleeFeatures = newClass( RoleCommonRpcFeatures, { name="Callee-Role 
 
 RoleCalleeFeatures.ROLE = 'callee'
 
-function RoleCalleeFeatures:__init__( params )
-	-- print( "RoleCalleeFeatures:__init__" )
+function RoleCalleeFeatures:__new__( params )
+	-- print( "RoleCalleeFeatures:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.call_trustlevels = params.call_trustlevels
 	self.pattern_based_registration = params.pattern_based_registration
-end
 
-function RoleCalleeFeatures:__initComplete__()
-	-- print( "RoleCalleeFeatures:__initComplete__" )
-	--==--
 	self:_check_all_bool()
 end
+
+-- function RoleCalleeFeatures:__initComplete__()
+-- 	-- print( "RoleCalleeFeatures:__initComplete__" )
+-- 	--==--
+-- 	self:_check_all_bool()
+-- end
 
 
 

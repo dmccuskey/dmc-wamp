@@ -63,69 +63,113 @@ local Promise = require 'lib.dmc_lua.lua_promise'
 
 local Deferred, maybeDeferred = Promise.Deferred, Promise.maybeDeferred
 
+local Future
 
-
---====================================================================--
---== Future Mix Container
---====================================================================--
-
-
-local FutureMixin = {}
-
-FutureMixin.__debug = false
 
 
 --====================================================================--
---== Public Functions
+--== Support Functions
 
 
-function FutureMixin.create_future( self )
+-- -- create general output string
+-- function outStr( msg )
+-- 	return "Future (debug) :: " .. tostring( msg )
+-- end
+
+-- -- create general error string
+-- function errStr( msg )
+-- 	return "\n\nERROR: Future :: " .. tostring( msg ) .. "\n\n"
+-- end
+
+
+
+function _patch( obj )
+
+	obj = obj or {}
+
+	-- add properties
+	Future.__init__( obj )
+
+	-- add methods
+	obj._create_future = Future._create_future
+	obj._as_future = Future._as_future
+	obj._resolve_future = Future._resolve_future
+	obj._reject_future = Future._reject_future
+	obj._add_future_callbacks = Future._add_future_callbacks
+	obj._gather_futures = Future._gather_futures
+
+	obj.setDebug = Future.setDebug
+
+	return obj
+end
+
+
+--====================================================================--
+--== Future Mixin
+--====================================================================--
+
+
+Future = {}
+
+Future.__debug = false
+
+
+--======================================================--
+-- Start: Mixin Setup for Lua Objects
+
+function Future.__init__( self, params )
+	-- print( "Future.__init__" )
+	params = params or {}
+	--==--
+	self.__debug_on = params.debug_on == nil and false or params.debug_on
+end
+
+function Future.__undoInit__( self )
+	-- print( "Future.__undoInit__" )
+	self.__debug_on = nil
+end
+
+-- END: Mixin Setup for Lua Objects
+--======================================================--
+
+
+
+--====================================================================--
+--== Public Methods
+
+
+function Future._create_future( self )
 	return Deferred:new()
 end
-function FutureMixin.as_future( self, func, args, kwargs )
-	-- print( "FutureMixin.as_future", self, func, args, kwargs )
+
+function Future._as_future( self, func, args, kwargs )
+	-- print( "Future._as_future", self, func, args, kwargs )
 	return maybeDeferred( func, args, kwargs )
 end
-function FutureMixin.resolve_future( self, future, value )
+
+function Future._resolve_future( self, future, value )
 	return future:callback( value )
 end
-function FutureMixin.reject_future( self, future, value )
+
+function Future._reject_future( self, future, value )
 	return future:errback( value )
 end
-function FutureMixin.add_future_callbacks( self, future, callback, errback )
-	-- print( "FutureMixin.add_future_callbacks", self, future, callback, errback )
+
+function Future._add_future_callbacks( self, future, callback, errback )
+	-- print( "Future._add_future_callbacks", self, future, callback, errback )
 	return future:addCallbacks( callback, errback )
 end
-function FutureMixin.gather_futures( self, futures, consume_exceptions )
+
+function Future._gather_futures( self, futures, consume_exceptions )
 	consume_exceptions = consume_exceptions or true
 
 	return DeferredList( {futures}, {consume_errors=consume_exceptions} )
 end
 
---== Facade API Methods ==--
 
-function FutureMixin._setDebug( value )
-	FutureMixin.__debug = value
+function Future._setDebug( self, value )
+	self.__debug_on = value
 end
-
-function FutureMixin._mixin( obj )
-	if FutureMixin.__debug then
-		print( "WAMP FutureMixin::mixin: ", obj.NAME )
-	end
-
-	obj = obj or {}
-
-	-- add methods
-	obj._create_future = FutureMixin.create_future
-	obj._as_future = FutureMixin.as_future
-	obj._resolve_future = FutureMixin.resolve_future
-	obj._reject_future = FutureMixin.reject_future
-	obj._add_future_callbacks = FutureMixin.add_future_callbacks
-	obj._gather_futures = FutureMixin.gather_futures
-
-	return obj
-end
-
 
 
 
@@ -135,7 +179,8 @@ end
 
 
 return {
-	setDebug = FutureMixin._setDebug,
-	mixin = FutureMixin._mixin
+	FutureMix=Future,
+
+	patch =_patch
 }
 

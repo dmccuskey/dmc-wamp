@@ -55,10 +55,10 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
 
 local WMessageFactory = require 'dmc_wamp.message'
+local WUtils = require 'dmc_wamp.utils'
 
 
 
@@ -68,7 +68,8 @@ local WMessageFactory = require 'dmc_wamp.message'
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
+
+local LOCAL_DEBUG = false
 
 
 
@@ -77,12 +78,12 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local Serializer = newClass( ObjectBase, { name="Serializer" } )
+local Serializer = newClass( nil, { name="Serializer" } )
 
-function Serializer:__init__( params )
+function Serializer:__new__( params )
 	-- print( "Serializer:__init__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	if self.is_class then return end
@@ -99,7 +100,9 @@ end
 --
 function Serializer:serialize( msg )
 	-- print( "Serializer:serialize", msg.MESSAGE_TYPE )
-	return msg:serialize( self._serializer ), self._serializer.BINARY
+	local payload = msg:serialize( self._serializer )
+	if LOCAL_DEBUG then print( payload ) end
+	return payload, self._serializer.BINARY
 end
 
 -- Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
@@ -148,8 +151,8 @@ JsonObjSerializer.BINARY = false
 function JsonObjSerializer:serialize( msg )
 	-- print( "JsonObjSerializer:serialize", msg )
 	local encoded_json = json.encode( msg )
-	encoded_json = Utils.decodeLuaTable( encoded_json )
-	encoded_json = Utils.decodeLuaInteger( encoded_json )
+	encoded_json = WUtils.decodeLuaTable( encoded_json )
+	encoded_json = WUtils.decodeLuaInteger( encoded_json )
 	return encoded_json
 end
 

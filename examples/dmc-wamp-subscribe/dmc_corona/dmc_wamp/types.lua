@@ -53,8 +53,8 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 
 
@@ -64,7 +64,6 @@ local Utils = require 'dmc_utils'
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
 
 
 
@@ -73,12 +72,12 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local ComponentConfig = newClass( ObjectBase, {name="Component Configuration"} )
+local ComponentConfig = newClass( nil, {name="Component Configuration"} )
 
-function ComponentConfig:__init__( params )
-	-- print( "ComponentConfig:__init__" )
+function ComponentConfig:__new__( params )
+	-- print( "ComponentConfig:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.realm = params.realm
 	self.extra = params.extra
@@ -87,7 +86,6 @@ function ComponentConfig:__init__( params )
 	self.authmethods = params.authmethods
 
 	self.onchallenge = params.onchallenge
-
 end
 
 
@@ -105,7 +103,7 @@ end
 --====================================================================--
 
 
-local HelloReturn = newClass( ObjectBase, {name="Hello Return Base"} )
+local HelloReturn = newClass( nil, {name="Hello Return Base"} )
 
 
 
@@ -114,12 +112,12 @@ local HelloReturn = newClass( ObjectBase, {name="Hello Return Base"} )
 --====================================================================--
 
 
-local Accept = newClass( ObjectBase, {name="Accept"} )
+local Accept = newClass( nil, {name="Accept"} )
 
-function Accept:__init__( params )
-	-- print( "Accept:__init__" )
+function Accept:__new__( params )
+	-- print( "Accept:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.authid == nil or type( params.authid ) == 'string' )
 	assert( params.authrole == nil or type( params.authrole ) == 'string' )
@@ -141,11 +139,11 @@ end
 
 local Deny = newClass( HelloReturn, {name="Deny"} )
 
-function Deny:__init__( params )
-	-- print( "Deny:__init__" )
+function Deny:__new__( params )
+	-- print( "Deny:__new__" )
 	params = params or {}
 	params.reason = params.reason or "wamp.error.not_authorized"
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.reason ) == 'string' )
 	assert( params.message==nil or type( params.message )=='string' )
@@ -164,11 +162,11 @@ end
 local Challenge = newClass( HelloReturn, {name="Challenge"} )
 
 
-function Challenge:__init__( params )
-	-- print( "Challenge:__init__" )
+function Challenge:__new__( params )
+	-- print( "Challenge:__new__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.method = params.method
 	self.extra = params.extra
@@ -183,10 +181,10 @@ end
 
 local HelloDetails = newClass( HelloReturn, {name="Hello Details"} )
 
-function HelloDetails:__init__( params )
-	-- print( "HelloDetails:__init__" )
+function HelloDetails:__new__( params )
+	-- print( "HelloDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.roles = params.roles
 	self.authmethods = params.authmethods
@@ -203,10 +201,10 @@ end
 
 local SessionDetails = newClass( HelloReturn, {name="Session Details"} )
 
-function SessionDetails:__init__( params )
-	-- print( "SessionDetails:__init__" )
+function SessionDetails:__new__( params )
+	-- print( "SessionDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.realm = params.realm
 	self.session = params.session -- id
@@ -223,12 +221,12 @@ end
 --====================================================================--
 
 
-local CloseDetails = newClass( ObjectBase, {name="Close Details"} )
+local CloseDetails = newClass( nil, {name="Close Details"} )
 
-function CloseDetails:__init__( params )
-	-- print( "CloseDetails:__init__" )
+function CloseDetails:__new__( params )
+	-- print( "CloseDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.reason = params.reason
 	self.message = params.message
@@ -241,12 +239,12 @@ end
 --====================================================================--
 
 
-local SubscribeOptions = newClass( ObjectBase, {name="Subscribe Options"} )
+local SubscribeOptions = newClass( nil, {name="Subscribe Options"} )
 
-function SubscribeOptions:__init__( params )
-	-- print( "SubscribeOptions:__init__" )
+function SubscribeOptions:__new__( params )
+	-- print( "SubscribeOptions:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.match==nil or ( type( params.match ) == 'string' and Utils.propertyIn( { 'exact', 'prefix', 'wildcard' }, params.match ) ) )
 	assert( params.details_arg == nil or type( params.details_arg ) == 'string' )
@@ -265,12 +263,12 @@ end
 --====================================================================--
 
 
-local RegisterOptions = newClass( ObjectBase, {name="Register Options"} )
+local RegisterOptions = newClass( nil, {name="Register Options"} )
 
-function RegisterOptions:__init__( params )
-	-- print( "RegisterOptions:__init__" )
+function RegisterOptions:__new__( params )
+	-- print( "RegisterOptions:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.details_arg = params.details_arg
 	self.options = {
@@ -286,12 +284,12 @@ end
 --====================================================================--
 
 
-local CallDetails = newClass( ObjectBase, {name="Call Details"} )
+local CallDetails = newClass( nil, {name="Call Details"} )
 
-function CallDetails:__init__( params )
-	-- print( "CallDetails:__init__" )
+function CallDetails:__new__( params )
+	-- print( "CallDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.progress = params.progress
 	self.caller = params.caller
