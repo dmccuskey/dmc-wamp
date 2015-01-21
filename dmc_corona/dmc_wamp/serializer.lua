@@ -68,7 +68,6 @@ local WUtils = require 'dmc_wamp.utils'
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
 
 
 
@@ -77,7 +76,7 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local Serializer = newClass( ObjectBase, { name="Serializer" } )
+local Serializer = newClass( nil, { name="Serializer" } )
 
 function Serializer:__new__( params )
 	-- print( "Serializer:__init__" )

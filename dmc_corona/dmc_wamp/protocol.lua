@@ -54,7 +54,7 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
+local Objects = require 'lib.dmc_lua.lua_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
 local LuaEventsMixin = require 'lib.dmc_lua.lua_events_mix'
 local Utils = require 'lib.dmc_lua.lua_utils'
