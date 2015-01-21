@@ -69,6 +69,8 @@ local WUtils = require 'dmc_wamp.utils'
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
 
+local LOCAL_DEBUG = false
+
 
 
 --====================================================================--
@@ -98,7 +100,9 @@ end
 --
 function Serializer:serialize( msg )
 	-- print( "Serializer:serialize", msg.MESSAGE_TYPE )
-	return msg:serialize( self._serializer ), self._serializer.BINARY
+	local payload = msg:serialize( self._serializer )
+	if LOCAL_DEBUG then print( payload ) end
+	return payload, self._serializer.BINARY
 end
 
 -- Implements :func:`autobahn.wamp.interfaces.ISerializer.unserialize`
