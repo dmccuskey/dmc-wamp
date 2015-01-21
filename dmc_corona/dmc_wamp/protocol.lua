@@ -582,7 +582,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Event ) then
 
 		if not self._subscriptions[ msg.subscription ] then
-			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
+			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID" ) )
 		end
 
 		local handler = self._subscriptions[ msg.subscription ]
@@ -649,6 +649,19 @@ function Session:onMessage( msg )
 	--== Unsubscribed Message
 
 	elseif msg:isa( WMessageFactory.Unsubscribed ) then
+
+		if not self._unsubscribe_reqs[ msg.request ] then
+			error( WError.ProtocolError( "UNSUBSCRIBED received for non-pending request ID" ) )
+			return
+		end
+
+		local unsub_req = tpop( self._unsubscribe_reqs, msg.request )
+		local def, sub = unpack( unsub_req )
+
+		self._subscriptions[sub.id] = nil
+		sub.active = false
+
+		self:_resolve_future( def )
 
 
 	--== Result Message
@@ -904,16 +917,14 @@ function Session:publish( topic, params )
 
 	if options.acknowledge == true then
 		local def = self:_create_future()
-		if params.onSuccess or params.onError then
-			def:addCallbacks( params.onSuccess, params.onError )
-		end
 		self._publish_reqs[ request ] = { def, options }
 		self._transport:send( msg )
+		return def
 	else
 		self._transport:send( msg )
 		return
-
 	end
+
 end
 
 
@@ -938,10 +949,6 @@ function Session:subscribe( topic, handler, params )
 		request = WUtils.id()
 		def = self:_create_future()
 		self._subscribe_reqs[ request ] = { def, obj, handler, topic, prms }
-
-		if prms.onSuccess or prms.onError then
-			def:addCallbacks( prms.onSuccess, prms.onError )
-		end
 
 		msg = WMessageFactory.Subscribe:new{
 			request=request,
@@ -985,7 +992,6 @@ end
 function Session:_unsubscribe( subscription )
 	-- print( "Session:_unsubscribe", subscription )
 	--==--
-
 	assert( subscription:isa( Subscription ) )
 	assert( subscription.active )
 	assert( self._subscriptions[subscription.id]~=nil )
@@ -994,14 +1000,20 @@ function Session:_unsubscribe( subscription )
 		error( WError.TransportLostError() )
 	end
 
-	local request, msg
+	local def, request, msg
 
 	request = WUtils.id()
+	def = self:_create_future()
+
+	self._unsubscribe_reqs[request] = { def, subscription }
+
 	msg = WMessageFactory.Unsubscribe:new{
 		request=request,
 		subscription=subscription.id
 	}
 	self._transport:send( msg )
+
+	return def
 
 end
 

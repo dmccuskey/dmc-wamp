@@ -178,6 +178,12 @@ Wamp.ONCONNECT = 'wamp_on_connect_event'
 Wamp.ONDISCONNECT = 'wamp_on_disconnect_event'
 -- Wamp.ONCLOSE = 'onclose'
 
+-- these are events from dmc_wamp, not WAMP
+-- to make more Corona-esque
+Wamp.ONSUBSCRIBED = 'wamp_on_subscribed_event'
+Wamp.ONPUBLISH = 'wamp_on_pub_event'
+Wamp.ONUNSUBSCRIBED = 'wamp_on_unsubscribed_event'
+
 
 --======================================================--
 -- Start: Setup DMC Objects
@@ -214,6 +220,8 @@ function Wamp:__init__( params )
 		onchallenge=params.onChallenge
 	}
 
+	self._subscriptions = {}
+
 	self._protocols = params.protocols
 
 	--== Object References ==--
@@ -239,8 +247,10 @@ end
 --======================================================--
 
 
+
 --====================================================================--
 --== Public Methods
+
 
 -- is_connected, getter, boolean
 --
@@ -359,13 +369,57 @@ function Wamp:publish( topic, params )
 
 end
 
+
+function Wamp:_createPubSubKey( topic, handler )
+	return topic .. '::' .. tostring( handler )
+end
+
 -- subscribe()
 -- @param topic string of "channel" to subscribe to
 -- @param handler function callback
 --
 function Wamp:subscribe( topic, handler, params )
-	-- print( "Wamp:subscribe", topic )
-	return self._session:subscribe( topic, handler, params )
+	-- print( "Wamp:subscribe", topic, handler )
+	params = params or {}
+	params.options = params.options or {}
+	--==--
+
+	local def, decorate_f, success_f, error_f
+
+	decorate_f = function( evt )
+		evt.is_error=false
+		evt.name=Wamp.EVENT
+		evt.type=Wamp.ONPUBLISH
+		handler( evt )
+	end
+
+	success_f = function( sub )
+		local key = self:_createPubSubKey( topic, handler )
+		self._subscriptions[key] = sub
+
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONSUBSCRIBED,
+			subscription=sub
+		}
+		handler( evt )
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONSUBSCRIBED,
+			error=err
+		}
+		handler( evt )
+	end
+
+	def = self._session:subscribe( topic, decorate_f, params )
+	def:addCallbacks( success_f, error_f )
+
+	return def
 end
 
 -- unsubscribe()
@@ -373,8 +427,39 @@ end
 -- @param handler function callback, same as in subscribe()
 --
 function Wamp:unsubscribe( topic, handler )
-	-- print( "Wamp:unsubscribe", topic )
-	return self._session:unsubscribe( topic, handler )
+	-- print( "Wamp:unsubscribe", topic, handler )
+
+	local key = self:_createPubSubKey( topic, handler )
+	local subscription = self._subscriptions[key]
+
+	assert( subscription, "handler not found for topic" )
+
+	local def, success_f, error_f
+
+	success_f = function( sub )
+		self._subscriptions[key] = nil
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONUNSUBSCRIBED,
+		}
+		handler( evt )
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONUNSUBSCRIBED,
+			error=err
+		}
+		handler( evt )
+	end
+
+	def = subscription:unsubscribe()
+	def:addCallbacks( success_f, error_f )
+
+	return def
 end
 
 
@@ -405,8 +490,10 @@ function Wamp:close( reason, message )
 end
 
 
+
 --====================================================================--
 --== Private Methods
+
 
 function Wamp:_wamp_close( reason, message )
 	-- print( "Wamp:_wamp_close" )
@@ -512,8 +599,10 @@ function Wamp:_onClose( params )
 end
 
 
+
 --====================================================================--
 --== Event Handlers
+
 
 function Wamp:_wampSessionEvent_handler( event )
 	-- print( "Wamp:_wampSessionEvent_handler: ", event.type )
