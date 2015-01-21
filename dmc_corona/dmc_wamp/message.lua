@@ -58,7 +58,7 @@ local json = require 'json'
 local Objects = require 'lib.dmc_lua.lua_objects'
 local Utils = require 'lib.dmc_lua.lua_utils'
 
-local WErrors = require 'dmc_wamp.exception'
+local WError = require 'dmc_wamp.exception'
 local WUtils = require 'dmc_wamp.utils'
 
 
@@ -66,8 +66,6 @@ local WUtils = require 'dmc_wamp.utils'
 --====================================================================--
 --== Setup, Constants
 
-
-local ProtocolError = WErrors.ProtocolErrorFactory
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
@@ -91,6 +89,14 @@ local _URI_PAT_LOOSE_NON_EMPTY = "^([^%s\.#]+\.)*([^%s\.#]+)$" -- original
 _URI_PAT_LOOSE_NON_EMPTY = "([^%s%.%#]+%.?)"
 
 
+local Hello, Welcome, Abort, Challenge, Authenticate, Goodbye
+local Heartbeat, Error
+local Subscribe, Subscribed, Unsubscribe, Unsubscribed
+local Publish, Event, Published
+local Register, Registered, Unregister, Unregistered
+local Call, Invocation, Result, Cancel, Interrupt, Yield
+
+
 
 --====================================================================--
 --== Support Functions
@@ -105,7 +111,7 @@ local function check_or_raise_uri( params )
 	--==--
 
 	if type( params.value ) ~= 'string' then
-		error( ProtocolError( "{0}: invalid type {1}" ) )
+		error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 	end
 
 	local pat, length
@@ -134,7 +140,7 @@ local function check_or_raise_uri( params )
 	end
 
 	if length ~= #params.value then
-		error( ProtocolError( "{0}: invalid type {1}" ) )
+		error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 	end
 
 	return params.value
@@ -149,10 +155,10 @@ local function check_or_raise_id( params )
 	--==--
 
 	if type( params.value ) ~= 'number' then
-		error( ProtocolError( "{0}: invalid type {1}" ) )
+		error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 	end
 	if params.value < 0 or params.value > 9007199254740992 then -- 2**53
-		error( ProtocolError( "{0}: invalid type {1}" ) )
+		error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 	end
 
 	return params.value
@@ -167,12 +173,12 @@ local function check_or_raise_extra( params )
 	--==--
 
 	if type( params.value ) ~= 'table' then
-		error( ProtocolError( "{0}: invalid type {1}" ) )
+		error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 	end
 
 	for k,v in pairs( params.value ) do
 		if type(k) ~= 'string' then
-			error( ProtocolError( "{0}: invalid type {1}" ) )
+			error( WError.ProtocolError( "{0}: invalid type {1}" ) )
 		end
 	end
 
@@ -212,7 +218,7 @@ end
 
 -- Format: `[ HELLO, Realm|uri, Details|dict ]`
 
-local Hello = newClass( Message, {name="Hello Message"} )
+Hello = newClass( Message, {name="Hello Message"} )
 
 Hello.MESSAGE_TYPE = 1  -- wamp message code
 
@@ -281,7 +287,7 @@ end
 
 -- Format: `[WELCOME, Session|id, Details|dict]`
 
-local Welcome = newClass( Message, {name="Welcome Message"} )
+Welcome = newClass( Message, {name="Welcome Message"} )
 
 Welcome.MESSAGE_TYPE = 2  -- wamp message code
 
@@ -333,7 +339,7 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[ABORT, Details|dict, Reason|uri]``
 
-local Abort = newClass( Message, {name="Abort Message"} )
+Abort = newClass( Message, {name="Abort Message"} )
 
 Abort.MESSAGE_TYPE = 3  -- wamp message code
 
@@ -358,7 +364,7 @@ function Abort.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Abort.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "invalid message length {0} for ABORT" ) )
+		error( WError.ProtocolError( "invalid message length {0} for ABORT" ) )
 	end
 
 	local details, reason, message
@@ -369,7 +375,7 @@ function Abort.parse( wmsg )
 	if details and details.message then
 		message = details.message
 		if type( message ) ~= 'string' then
-			error( ProtocolError( "invalid type {0} for 'message' detail in ABORT" ) )
+			error( WError.ProtocolError( "invalid type {0} for 'message' detail in ABORT" ) )
 		end
 	end
 
@@ -396,7 +402,7 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[CHALLENGE, Method|string, Extra|dict]``
 
-local Challenge = newClass( Message, {name="Challenge Message"} )
+Challenge = newClass( Message, {name="Challenge Message"} )
 
 Challenge.MESSAGE_TYPE = 4  -- wamp message code
 
@@ -421,14 +427,14 @@ function Challenge.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Challenge.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "invalid message length {0} for CHALLENGE" ) )
+		error( WError.ProtocolError( "invalid message length {0} for CHALLENGE" ) )
 	end
 
 	local method, extra
 
 	method = wmsg[2]
 	if type( method ) ~= 'string' then
-		error( ProtocolError( "invalid type {0} for 'method' in CHALLENGE" ) )
+		error( WError.ProtocolError( "invalid type {0} for 'method' in CHALLENGE" ) )
 	end
 
 	extra = check_or_raise_extra{ value=wmsg[3], message="'extra' in CHALLENGE" }
@@ -456,7 +462,7 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[AUTHENTICATE, Signature|string, Extra|dict]``
 
-local Authenticate = newClass( Message, {name="Authenticate Message"} )
+Authenticate = newClass( Message, {name="Authenticate Message"} )
 
 Authenticate.MESSAGE_TYPE = 5  -- wamp message code
 
@@ -498,7 +504,7 @@ end
 
 -- Format: `[GOODBYE, Details|dict, Reason|uri]`
 
-local Goodbye = newClass( Message, {name="Goodbye Message"} )
+Goodbye = newClass( Message, {name="Goodbye Message"} )
 
 Goodbye.MESSAGE_TYPE = 6  -- wamp message code
 Goodbye.DEFAULT_REASON = 'wamp.goodbye.normal'
@@ -523,7 +529,7 @@ function Goodbye.parse( wmsg )
 
 	assert( #wmsg > 0 and wmsg[1] == Goodbye.MESSAGE_TYPE )
 	if #wmsg ~= 3 then
-		error( ProtocolError( "invalid message length {0} for ERROR" ) )
+		error( WError.ProtocolError( "invalid message length {0} for ERROR" ) )
 	end
 
 	local details, reason, message
@@ -534,7 +540,7 @@ function Goodbye.parse( wmsg )
 	if details and details.message then
 		message = details.message
 		if type( message) ~= 'string' then
-			error( ProtocolError( "invalid type {0} for 'message' detail in ABORT" ) )
+			error( WError.ProtocolError( "invalid type {0} for 'message' detail in ABORT" ) )
 		end
 	end
 
@@ -569,7 +575,7 @@ end
 -- ``[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]``
 
 
-local Heartbeat = newClass( Message, {name="Heartbeat Message"} )
+Heartbeat = newClass( Message, {name="Heartbeat Message"} )
 
 Heartbeat.MESSAGE_TYPE = 7  -- wamp message code
 
@@ -595,7 +601,7 @@ function Heartbeat.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Heartbeat.MESSAGE_TYPE )
 
 	if not Utils.propertyIn( { 3, 4 }, #wmsg ) then
-		error( ProtocolError( "invalid message length HEARTBEAT" ) )
+		error( WError.ProtocolError( "invalid message length HEARTBEAT" ) )
 	end
 
 	local incoming, outgoing, discard
@@ -603,21 +609,21 @@ function Heartbeat.parse( wmsg )
 	incoming = wmsg[2]
 
 	if type( incoming ) ~= 'number' then
-		error( ProtocolError( "invalid type 'incoming' HEARTBEAT" ) )
+		error( WError.ProtocolError( "invalid type 'incoming' HEARTBEAT" ) )
 	end
 
 	if incoming < 0 then
-		error( ProtocolError( "non negative 'incoming' HEARTBEAT" ) )
+		error( WError.ProtocolError( "non negative 'incoming' HEARTBEAT" ) )
 	end
 
 	outgoing = wmsg[3]
 
 	if type( outgoing ) ~= 'number' then
-		error( ProtocolError( "invalid type 'outgoing' HEARTBEAT" ) )
+		error( WError.ProtocolError( "invalid type 'outgoing' HEARTBEAT" ) )
 	end
 
 	if outgoing <= 0 then
-		error( ProtocolError( "non negative 'outgoing' HEARTBEAT" ) )
+		error( WError.ProtocolError( "non negative 'outgoing' HEARTBEAT" ) )
 	end
 
 	discard = nil
@@ -625,7 +631,7 @@ function Heartbeat.parse( wmsg )
 		discard = wmsg[4]
 
 		if type( discard ) ~= 'string' then
-			error( ProtocolError( "invalid type 'discard' HEARTBEAT" ) )
+			error( WError.ProtocolError( "invalid type 'discard' HEARTBEAT" ) )
 		end
 	end
 
@@ -663,7 +669,7 @@ Formats:
 * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Error = newClass( Message, {name="Error Message"} )
+Error = newClass( Message, {name="Error Message"} )
 
 Error.MESSAGE_TYPE = 8  -- wamp message code
 
@@ -696,14 +702,14 @@ function Error.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Error.MESSAGE_TYPE )
 
 	if not Utils.propertyIn( { 5, 6, 7 }, #wmsg ) then
-		error( ProtocolError( "invalid message length ERROR" ) )
+		error( WError.ProtocolError( "invalid message length ERROR" ) )
 	end
 
-	local request_type, request, error, args, kwargs, _
+	local request_type, request, err, args, kwargs, _
 
 	request_type = wmsg[2]
 	if type(request_type) ~= 'number' then
-		error( ProtocolError( "invalid 'request_type' in ERROR" ) )
+		error( WError.ProtocolError( "invalid 'request_type' in ERROR" ) )
 	end
 
 	local REQUEST_TYPES = {
@@ -717,24 +723,24 @@ function Error.parse( wmsg )
 	}
 
 	if not Utils.propertyIn( REQUEST_TYPES, request_type ) then
-		error( ProtocolError( "invalid value for 'request_type' in ERROR" ) )
+		error( WError.ProtocolError( "invalid value for 'request_type' in ERROR" ) )
 	end
 
 	request = check_or_raise_id{ value=wmsg[3], message="'request' in ERROR" }
 	_ = check_or_raise_extra{ value=wmsg[4], message="'details' in ERROR" }
-	error = check_or_raise_uri{ value=wmsg[5], message="'error' in ERROR" }
+	err = check_or_raise_uri{ value=wmsg[5], message="'error' in ERROR" }
 
 	if #wmsg > 4 then
 		args = wmsg[4]
 		if type(args) ~= 'table' then
-			error( ProtocolError( "invalid type 'args' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'args' in EVENT" ) )
 		end
 	end
 
 	if #wmsg > 5 then
 		kwargs = wmsg[5]
 		if type(kwargs) ~= 'table' then
-			error( ProtocolError( "invalid type 'kwargs' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'kwargs' in EVENT" ) )
 		end
 	end
 
@@ -785,7 +791,7 @@ Format:
 * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Publish = newClass( Message, {name="Publish Message"} )
+Publish = newClass( Message, {name="Publish Message"} )
 
 Publish.MESSAGE_TYPE = 16  -- wamp message code
 
@@ -872,7 +878,7 @@ Format:
 * `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
 --]]
 
-local Published = newClass( Message, {name="Published Message"} )
+Published = newClass( Message, {name="Published Message"} )
 
 Published.MESSAGE_TYPE = 17  -- wamp message code
 
@@ -896,7 +902,7 @@ function Published.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Published.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "invalid length {0} for PUBLISHED" ) )
+		error( WError.ProtocolError( "invalid length {0} for PUBLISHED" ) )
 	end
 
 	local request = check_or_raise_id{ value=wmsg[2], message="'request' in PUBLISHED" }
@@ -928,7 +934,7 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribe = newClass( Message, {name="Subscribe Message"} )
+Subscribe = newClass( Message, {name="Subscribe Message"} )
 
 Subscribe.MESSAGE_TYPE = 32  -- wamp message code
 
@@ -960,7 +966,7 @@ function Subscribe.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Subscribe.MESSAGE_TYPE )
 
 	if #wmsg ~= 4 then
-		error( ProtocolError( "wrong length, Subscribe" ) )
+		error( WError.ProtocolError( "wrong length, Subscribe" ) )
 	end
 
 	local request, options, topic
@@ -1004,7 +1010,7 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribed = newClass( Message, {name="Subscribed Message"} )
+Subscribed = newClass( Message, {name="Subscribed Message"} )
 
 Subscribed.MESSAGE_TYPE = 33  -- wamp message code
 
@@ -1029,7 +1035,7 @@ function Subscribed.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Subscribed.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "wrong length, Subscribed" ) )
+		error( WError.ProtocolError( "wrong length, Subscribed" ) )
 	end
 
 	local request, subscription
@@ -1063,7 +1069,7 @@ end
 Format: `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
 --]]
 
-local Unsubscribe = newClass( Message, {name="Unsubscribe Message"} )
+Unsubscribe = newClass( Message, {name="Unsubscribe Message"} )
 
 Unsubscribe.MESSAGE_TYPE = 34  -- wamp message code
 
@@ -1088,7 +1094,7 @@ function Unsubscribe.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Unsubscribe.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "wrong length, Unsubscribe" ) )
+		error( WError.ProtocolError( "wrong length, Unsubscribe" ) )
 	end
 
 	local request, subscription
@@ -1119,7 +1125,7 @@ end
 --====================================================================--
 
 
-local Unsubscribed = newClass( Message, {name="Unsubscribed Message"} )
+Unsubscribed = newClass( Message, {name="Unsubscribed Message"} )
 
 Unsubscribed.MESSAGE_TYPE = 35  -- wamp message code
 
@@ -1142,7 +1148,7 @@ function Unsubscribed.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Unsubscribed.MESSAGE_TYPE )
 
 	if #wmsg ~= 2 then
-		error( ProtocolError( "wrong length, Unsubscribed" ) )
+		error( WError.ProtocolError( "wrong length, Unsubscribed" ) )
 	end
 
 	local request = check_or_raise_id{ value=wmsg[2], message="'request' in UNSUBSCRIBED" }
@@ -1175,7 +1181,7 @@ Formats:
 * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]`
 --]]
 
-local Event = newClass( Message, {name="Event Message"} )
+Event = newClass( Message, {name="Event Message"} )
 
 Event.MESSAGE_TYPE = 36  -- wamp message code
 
@@ -1207,7 +1213,7 @@ function Event.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Event.MESSAGE_TYPE )
 
 	if not Utils.propertyIn( { 4, 5, 6 }, #wmsg ) then
-		error( ProtocolError( "wrong length, EVENT" ) )
+		error( WError.ProtocolError( "wrong length, EVENT" ) )
 	end
 
 	local subscription, publication, details
@@ -1221,21 +1227,21 @@ function Event.parse( wmsg )
 	if #wmsg > 4 then
 		args = wmsg[5]
 		if type(args) ~= 'table' then
-			error( ProtocolError( "invalid type 'args' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'args' in EVENT" ) )
 		end
 	end
 
 	if #wmsg > 5 then
 		kwargs = wmsg[6]
 		if type(kwargs) ~= 'table' then
-			error( ProtocolError( "invalid type 'kwargs' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'kwargs' in EVENT" ) )
 		end
 	end
 
 	if details and details.publisher then
 		publisher = details.publisher
 		if type(publisher) ~= 'number' then
-			error( ProtocolError( "invalid type 'publisher' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'publisher' in EVENT" ) )
 		end
 	end
 
@@ -1287,7 +1293,7 @@ Formats:
 * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Call = newClass( Message, {name="Call Message"} )
+Call = newClass( Message, {name="Call Message"} )
 
 Call.MESSAGE_TYPE = 48  -- wamp message code
 
@@ -1366,7 +1372,7 @@ end
 
 -- Format: ``[CANCEL, CALL.Request|id, Options|dict]``
 
-local Cancel = newClass( Message, {name="Cancel Message"} )
+Cancel = newClass( Message, {name="Cancel Message"} )
 
 Cancel.MESSAGE_TYPE = 49  -- wamp message code
 
@@ -1424,7 +1430,7 @@ Formats:
 	* `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
 --]]
 
-local Result = newClass( Message, {name="Result Message"} )
+Result = newClass( Message, {name="Result Message"} )
 
 Result.MESSAGE_TYPE = 50  -- wamp message code
 
@@ -1452,7 +1458,7 @@ function Result.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Result.MESSAGE_TYPE )
 
 	if not Utils.propertyIn( { 3, 4, 5 }, #wmsg ) then
-		error( ProtocolError( "wrong length in RESULT" ) )
+		error( WError.ProtocolError( "wrong length in RESULT" ) )
 	end
 
 	local request, details
@@ -1464,24 +1470,23 @@ function Result.parse( wmsg )
 	if #wmsg > 3 then
 		args = wmsg[4]
 		if type(args) ~= 'table' then
-			error( ProtocolError( "invalid type 'args' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'args' in EVENT" ) )
 		end
 	end
 
 	if #wmsg > 4 then
 		kwargs = wmsg[5]
 		if type(kwargs) ~= 'table' then
-			error( ProtocolError( "invalid type 'kwargs' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'kwargs' in EVENT" ) )
 		end
 	end
 
 	if details and details.progress then
 		progress = details.progress
 		if type(progress) ~= 'boolean' then
-			error( ProtocolError( "invalid type 'progress' in EVENT" ) )
+			error( WError.ProtocolError( "invalid type 'progress' in EVENT" ) )
 		end
 	end
-
 
 	return Result{
 		request=request,
@@ -1526,7 +1531,7 @@ Format:
 * `[REGISTER, Request|id, Options|dict, Procedure|uri]`
 --]]
 
-local Register = newClass( Message, {name="Register Message"} )
+Register = newClass( Message, {name="Register Message"} )
 
 Register.MESSAGE_TYPE = 64  -- wamp message code
 
@@ -1599,7 +1604,7 @@ Format:
 * `[REGISTERED, REGISTER.Request|id, Registration|id]`
 --]]
 
-local Registered = newClass( Message, {name="Registered Message"} )
+Registered = newClass( Message, {name="Registered Message"} )
 
 Registered.MESSAGE_TYPE = 65  -- wamp message code
 
@@ -1625,7 +1630,7 @@ function Registered.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Registered.MESSAGE_TYPE )
 
 	if #wmsg ~= 3 then
-		error( ProtocolError( "wrong length in REGISTERED" ) )
+		error( WError.ProtocolError( "wrong length in REGISTERED" ) )
 	end
 
 	local request, registration
@@ -1667,7 +1672,7 @@ Format:
 * `[UNREGISTER, Request|id, REGISTERED.Registration|id]`
 --]]
 
-local Unregister = newClass( Message, {name="Unregister Message"} )
+Unregister = newClass( Message, {name="Unregister Message"} )
 
 Unregister.MESSAGE_TYPE = 66  -- wamp message code
 
@@ -1716,7 +1721,7 @@ end
 --====================================================================--
 
 
-local Unregistered = newClass( Message, {name="Unregistered Message"} )
+Unregistered = newClass( Message, {name="Unregistered Message"} )
 
 Unregistered.MESSAGE_TYPE = 67  -- wamp message code
 
@@ -1741,7 +1746,7 @@ function Unregistered.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Unregistered.MESSAGE_TYPE )
 
 	if #wmsg ~= 2 then
-		error( ProtocolError( "wrong length in UNREGISTERED" ) )
+		error( WError.ProtocolError( "wrong length in UNREGISTERED" ) )
 	end
 
 	local request = check_or_raise_id{ value=wmsg[2], message="'request' in REGISTERED" }
@@ -1781,7 +1786,7 @@ Formats:
 * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]`
 --]]
 
-local Invocation = newClass( Message, {name="Invocation Message"} )
+Invocation = newClass( Message, {name="Invocation Message"} )
 
 Invocation.MESSAGE_TYPE = 68  -- wamp message code
 
@@ -1825,7 +1830,7 @@ function Invocation.parse( wmsg )
 	assert( #wmsg > 0 and wmsg[1] == Invocation.MESSAGE_TYPE )
 
 	if not Utils.propertyIn( { 4, 5, 6 }, #wmsg ) then
-		error( ProtocolError( "wrong length in INVOCATION" ) )
+		error( WError.ProtocolError( "wrong length in INVOCATION" ) )
 	end
 
 	local request, registration, details
@@ -1840,14 +1845,14 @@ function Invocation.parse( wmsg )
 	if #wmsg > 4 then
 		args = wmsg[5]
 		if type(args) ~= 'table' then
-			error( ProtocolError( "invalid type 'args' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'args' in INVOCATION" ) )
 		end
 	end
 
 	if #wmsg > 5 then
 		kwargs = wmsg[6]
 		if type(kwargs) ~= 'table' then
-			error( ProtocolError( "invalid type 'kwargs' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'kwargs' in INVOCATION" ) )
 		end
 	end
 
@@ -1855,49 +1860,49 @@ function Invocation.parse( wmsg )
 	if details and details.timeout then
 		timeout = details.timeout
 		if type(timeout) ~= 'boolean' then
-			error( ProtocolError( "invalid type 'timeout' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'timeout' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.receive_progress then
 		receive_progress = details.receive_progress
 		if type(receive_progress) ~= 'boolean' then
-			error( ProtocolError( "invalid type 'receive_progress' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'receive_progress' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.caller then
 		caller = details.caller
 		if type(caller) ~= 'number' then
-			error( ProtocolError( "invalid type 'caller' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'caller' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.caller_transport then
 		caller_transport = details.caller_transport
 		if type(caller_transport) ~= 'number' then
-			error( ProtocolError( "invalid type 'caller_transport' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'caller_transport' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.authid then
 		authid = details.authid
 		if type(authid) ~= 'string' then
-			error( ProtocolError( "invalid type 'authid' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'authid' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.authrole then
 		authrole = details.authrole
 		if type(authrole) ~= 'string' then
-			error( ProtocolError( "invalid type 'authrole' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'authrole' in INVOCATION" ) )
 		end
 	end
 
 	if details and details.authmethod then
 		authmethod = details.authmethod
 		if type(authmethod) ~= 'string' then
-			error( ProtocolError( "invalid type 'authmethod' in INVOCATION" ) )
+			error( WError.ProtocolError( "invalid type 'authmethod' in INVOCATION" ) )
 		end
 	end
 
@@ -1942,7 +1947,7 @@ end
 
 -- Format: ``[INTERRUPT, CALL.Request|id, Options|dict]``
 
-local Interrupt = newClass( Message, {name="Interrupt Message"} )
+Interrupt = newClass( Message, {name="Interrupt Message"} )
 
 Interrupt.MESSAGE_TYPE = 69  -- wamp message code
 
@@ -2001,7 +2006,7 @@ Format:
 * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Yield = newClass( Message, {name="Yield Message"} )
+Yield = newClass( Message, {name="Yield Message"} )
 
 Yield.MESSAGE_TYPE = 70  -- wamp message code
 
