@@ -302,6 +302,28 @@ end
 
 
 --====================================================================--
+--== Call Results Class
+--====================================================================--
+
+
+local CallResult = newClass( nil, {name="Call Result"} )
+
+function CallResult:__new__( params )
+	-- print( "CallResult:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	self.results = params.results
+	self.kwresults = params.kwresults
+end
+
+-- function CallResult:__tostring__()
+-- 	return "Call Result"
+-- end
+
+
+
+--====================================================================--
 --== Types Facade
 --====================================================================--
 
@@ -318,4 +340,5 @@ return {
 	RegisterOptions=RegisterOptions,
 	CallDetails=CallDetails,
 	CloseDetails=CloseDetails,
+	CallResult=CallResult
 }

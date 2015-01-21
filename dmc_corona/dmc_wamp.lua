@@ -185,6 +185,9 @@ Wamp.ONPUBLISH = 'wamp_on_publish_event'
 Wamp.ONUNSUBSCRIBED = 'wamp_on_unsubscribed_event'
 Wamp.ONPUBLISHED = 'wamp_on_published_event'
 
+Wamp.ONRESULT = 'wamp_on_result_event'
+Wamp.ONPROGRESS = 'wamp_on_progress_event'
+
 
 --======================================================--
 -- Start: Setup DMC Objects
@@ -269,19 +272,86 @@ end
 -- onResult - callback
 -- onProgress - callback
 -- onError - callback
-function Wamp:call( procedure, params )
-	-- print( "Wamp:call", procedure )
+function Wamp:call( procedure, handler, params )
+	-- print( "Wamp:call", procedure, handler )
 	params = params or {}
+	params.options = params.options or {}
+	assert( type(procedure)=='string', "Wamp:call :: incorrect type for procedure" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
 	--==--
 
-	local onError = params.onError
+	local success_f, progress_f, error_f
 
-	params.onError = function( event )
-		-- print( "Wamp:call, on error")
-		if onError then onError( event ) end
+	success_f = function( res )
+		assert( res and res.isa and res:isa(WTypes.CallResult) )
+		if res.results and #res.results==1 and not res.kwresults then
+		end
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONRESULT,
+			results=res.results,
+			kwresults=res.kwresults,
+		}
+		-- make it easier to get to single result item
+		if res.results and #res.results==1 and not res.kwresults then
+			evt.data = res.results[1]
+		end
+		if handler then handler( evt ) end
 	end
 
-	return self._session:call( procedure, params )
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONRESULT,
+			error=err
+		}
+		if handler then handler( evt ) end
+	end
+
+	progress_f = function( args, kwargs )
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONPROGRESS,
+			args=args,
+			kwargs=kwargs
+		}
+		if handler then handler( evt ) end
+	end
+
+	params.options.onProgress = progress_f
+
+	try{
+		function()
+			local def = self._session:call( procedure, params )
+			def:addCallbacks( success_f, error_f )
+			return def
+		end,
+
+		catch{
+			function(e)
+				if type(e)=='string' then
+					error( e )
+				elseif e:isa( WError.ProtocolError ) then
+					print( e.traceback )
+					self:_bailout{
+						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
+						reason="WAMP Protocol Error"
+					}
+				else
+					print( e.traceback )
+					self:_bailout{
+						code=WebSocket.CLOSE_STATUS_CODE_INTERNAL_ERROR,
+						reason="WAMP Internal Error ({})"
+					}
+				end
+				error_f(e)
+			end
+		}
+	}
+
 end
 
 -- register()
