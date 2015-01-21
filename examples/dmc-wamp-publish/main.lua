@@ -3,13 +3,10 @@
 --
 -- Basic Publish test for the WAMP library
 --
--- by David McCuskey
---
 -- Sample code is MIT licensed, the same license which covers Lua itself
 -- http://en.wikipedia.org/wiki/MIT_License
--- Copyright (C) 2014 David McCuskey. All Rights Reserved.
+-- Copyright (C) 2014-2015 David McCuskey. All Rights Reserved.
 --====================================================================--
-
 
 
 print( '\n\n##############################################\n\n' )
@@ -36,6 +33,7 @@ local Wamp = require 'dmc_corona.dmc_wamp'
 local HOST = gINFO.server.host
 local PORT = gINFO.server.port
 local REALM = gINFO.server.realm
+local WAMP_PUBSUB_TOPIC = gINFO.server.pubsub_topic
 
 local wamp -- ref to WAMP object
 local doWampPublish -- forward delare function
@@ -53,7 +51,7 @@ local count = 0
 doWampPublish = function()
 	print( ">> Wamp Publish event")
 
-	local topic = 'com.myapp.topic1'
+	local topic = WAMP_PUBSUB_TOPIC
 
 	local publish_handler = function( publication )
 		print( ">> WAMP publish acknowledgment" )
@@ -69,11 +67,9 @@ doWampPublish = function()
 
 	count = count + 1
 	local params = {
-		options={ acknowledge=true },
-		args={ "hello-" .. tostring(i) },
-		kwargs={},
-		onSuccess=publish_handler,
-		onError=publish_handler
+		args={ "message-" .. tostring(i), },
+		-- kwargs={},
+		callback=publish_handler
 	}
 	wamp:publish( topic, params )
 
@@ -89,12 +85,13 @@ end
 local wampEvent_handler = function( event )
 	print( ">> wampEvent_handler", event.type )
 
-	if event.type == wamp.ONCONNECT then
-		print( ">> We have WAMP Connect" )
+	if event.type == wamp.ONJOIN then
+		print( ">> We have WAMP Join" )
 		doWampPublish()
 
 	elseif event.type == wamp.ONDISCONNECT then
 		print( ">> We have WAMP Disconnect" )
+		print( ">> ", event.reason, event.message )
 	end
 
 end

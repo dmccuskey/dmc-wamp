@@ -1,37 +1,39 @@
 --====================================================================--
--- dmc_wamp.messages
+-- dmc_corona/dmc_wamp/messages.lua
 --
---
--- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: http://docs.davidmccuskey.com/
 --====================================================================--
 
 --[[
 
-Copyright (C) 2014 David McCuskey. All Rights Reserved.
+The MIT License (MIT)
 
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in the
-Software without restriction, including without limitation the rights to use, copy,
-modify, merge, publish, distribute, sublicense, and/or sell copies of the Software,
-and to permit persons to whom the Software is furnished to do so, subject to the
-following conditions:
+Copyright (c) 2014-2015 David McCuskey
 
-The above copyright notice and this permission notice shall be included in all copies
-or substantial portions of the Software.
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
-PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE
-FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
-DEALINGS IN THE SOFTWARE.
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
 
 --]]
 
 
 --====================================================================--
---== DMC Corona Library : Message
+--== DMC Corona Library : DMC WAMP Message
 --====================================================================--
 
 
@@ -39,6 +41,7 @@ DEALINGS IN THE SOFTWARE.
 Wamp support adapted from:
 * AutobahnPython (https://github.com/tavendo/AutobahnPython/)
 --]]
+
 
 -- Semantic Versioning Specification: http://semver.org/
 
@@ -52,11 +55,11 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'lua_objects'
-local Utils = require 'lua_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
-local Errors = require 'dmc_wamp.exception'
-local ProtocolError = Errors.ProtocolErrorFactory
+local WErrors = require 'dmc_wamp.exception'
+local WUtils = require 'dmc_wamp.utils'
 
 
 
@@ -64,9 +67,10 @@ local ProtocolError = Errors.ProtocolErrorFactory
 --== Setup, Constants
 
 
+local ProtocolError = WErrors.ProtocolErrorFactory
+
 -- setup some aliases to make code cleaner
-local inheritsFrom = Objects.inheritsFrom
-local ObjectBase = Objects.ObjectBase
+local newClass = Objects.newClass
 
 
 -- strict URI check allowing empty URI components
@@ -182,13 +186,12 @@ end
 --====================================================================--
 
 
-local Message = inheritsFrom( ObjectBase )
-Message.NAME = "Message Base"
+local Message = newClass( nil, {name="Message Base"} )
 
-function Message:_init( params )
-	-- print( "Message:_init" )
+function Message:__new__( params )
+	-- print( "Message:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	self.serialized = {}
@@ -209,15 +212,14 @@ end
 
 -- Format: `[ HELLO, Realm|uri, Details|dict ]`
 
-local Hello = inheritsFrom( Message )
-Hello.NAME = "Hello Message"
+local Hello = newClass( Message, {name="Hello Message"} )
 
 Hello.MESSAGE_TYPE = 1  -- wamp message code
 
-function Hello:_init( params )
-	-- print( "Hello:_init" )
+function Hello:__new__( params )
+	-- print( "Hello:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.realm )=='string' )
 	assert( type( params.roles )=='table' )
@@ -253,7 +255,7 @@ function Hello:marshal()
 			if not ref.features then ref.features = {} end
 			ref.features[k]=v
 		end
-		details.roles[ role.ROLE ] = Utils.encodeLuaTable( ref )
+		details.roles[ role.ROLE ] = WUtils.encodeLuaTable( ref )
 	end
 
 	if self.authmethods then
@@ -265,7 +267,7 @@ function Hello:marshal()
 	end
 
 	-- hack values
-	details = Utils.encodeLuaTable( details )
+	details = WUtils.encodeLuaTable( details )
 
 	return { Hello.MESSAGE_TYPE, self.realm, details }
 end
@@ -279,15 +281,14 @@ end
 
 -- Format: `[WELCOME, Session|id, Details|dict]`
 
-local Welcome = inheritsFrom( Message )
-Welcome.NAME = "Welcome Message"
+local Welcome = newClass( Message, {name="Welcome Message"} )
 
 Welcome.MESSAGE_TYPE = 2  -- wamp message code
 
-function Welcome:_init( params )
-	-- print( "Welcome:_init" )
+function Welcome:__new__( params )
+	-- print( "Welcome:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type(params.session)=='number' )
 	assert( type(params.roles)=='table' )
@@ -332,15 +333,14 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[ABORT, Details|dict, Reason|uri]``
 
-local Abort = inheritsFrom( Message )
-Abort.NAME = "Abort Message"
+local Abort = newClass( Message, {name="Abort Message"} )
 
 Abort.MESSAGE_TYPE = 3  -- wamp message code
 
-function Abort:_init( params )
-	-- print( "Abort:_init" )
+function Abort:__new__( params )
+	-- print( "Abort:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.reason )=='string' )
 	assert( params.message == nil or type( params.message )=='string' )
@@ -396,15 +396,14 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[CHALLENGE, Method|string, Extra|dict]``
 
-local Challenge = inheritsFrom( Message )
-Challenge.NAME = "Challenge Message"
+local Challenge = newClass( Message, {name="Challenge Message"} )
 
 Challenge.MESSAGE_TYPE = 4  -- wamp message code
 
-function Challenge:_init( params )
-	-- print( "Challenge:_init" )
+function Challenge:__new__( params )
+	-- print( "Challenge:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.method )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -457,16 +456,15 @@ marshal() method not implemeneted because only necessary for routers
 
 -- Format: ``[AUTHENTICATE, Signature|string, Extra|dict]``
 
-local Authenticate = inheritsFrom( Message )
-Authenticate.NAME = "Authenticate Message"
+local Authenticate = newClass( Message, {name="Authenticate Message"} )
 
 Authenticate.MESSAGE_TYPE = 5  -- wamp message code
 
-function Authenticate:_init( params )
-	-- print( "Authenticate:_init" )
+function Authenticate:__new__( params )
+	-- print( "Authenticate:__new__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.signature )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -486,7 +484,7 @@ parse() method not implemented because only necessary for routers
 
 function Authenticate:marshal()
 	-- print( "Authenticate:marshal" )
-	local extra = Utils.encodeLuaTable( self.extra )
+	local extra = WUtils.encodeLuaTable( self.extra )
 
 	return { Authenticate.MESSAGE_TYPE, self.signature, extra }
 end
@@ -500,16 +498,15 @@ end
 
 -- Format: `[GOODBYE, Details|dict, Reason|uri]`
 
-local Goodbye = inheritsFrom( Message )
-Goodbye.NAME = "Goodbye Message"
+local Goodbye = newClass( Message, {name="Goodbye Message"} )
 
 Goodbye.MESSAGE_TYPE = 6  -- wamp message code
 Goodbye.DEFAULT_REASON = 'wamp.goodbye.normal'
 
-function Goodbye:_init( params )
-	-- print( "Goodbye:_init" )
+function Goodbye:__new__( params )
+	-- print( "Goodbye:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.reason )=='string' )
@@ -555,7 +552,7 @@ function Goodbye:marshal()
 	}
 
 	-- hack before sending
-	details = Utils.encodeLuaTable( details )
+	details = WUtils.encodeLuaTable( details )
 
 	return { Goodbye.MESSAGE_TYPE, details, self.reason }
 end
@@ -572,15 +569,14 @@ end
 -- ``[HEARTBEAT, Incoming|integer, Outgoing|integer, Discard|string]``
 
 
-local Heartbeat = inheritsFrom( Message )
-Heartbeat.NAME = "Heartbeat Message"
+local Heartbeat = newClass( Message, {name="Heartbeat Message"} )
 
 Heartbeat.MESSAGE_TYPE = 7  -- wamp message code
 
-function Heartbeat:_init( params )
-	-- print( "Heartbeat:_init" )
+function Heartbeat:__new__( params )
+	-- print( "Heartbeat:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.incoming ) == 'number' )
 	assert( type( params.outgoing ) == 'number' )
@@ -667,15 +663,14 @@ Formats:
 * `[ERROR, REQUEST.Type|int, REQUEST.Request|id, Details|dict, Error|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Error = inheritsFrom( Message )
-Error.NAME = "Error Message"
+local Error = newClass( Message, {name="Error Message"} )
 
 Error.MESSAGE_TYPE = 8  -- wamp message code
 
-function Error:_init( params )
-	-- print( "Error:_init" )
+function Error:__new__( params )
+	-- print( "Error:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.request_type )=='number' )
@@ -764,8 +759,8 @@ function Error:marshal()
 	-- 	discloseMe = self.discloseMe
 	-- }
 
-	-- options = Utils.encodeLuaTable( options )
-	-- self.kwargs = Utils.encodeLuaTable( self._kwargs )
+	-- options = WUtils.encodeLuaTable( options )
+	-- self.kwargs = WUtils.encodeLuaTable( self._kwargs )
 
 	-- if self._kwargs then
 	-- 	return { Error.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self._kwargs }
@@ -790,15 +785,14 @@ Format:
 * `[PUBLISH, Request|id, Options|dict, Topic|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Publish = inheritsFrom( Message )
-Publish.NAME = "Publish Message"
+local Publish = newClass( Message, {name="Publish Message"} )
 
 Publish.MESSAGE_TYPE = 16  -- wamp message code
 
-function Publish:_init( params )
-	-- print( "Publish:_init" )
+function Publish:__new__( params )
+	-- print( "Publish:__new__" )
 	params = params or {}
-	self:superCall( "_init", params )
+	self:superCall( "__new__", params )
 	--==--
 
 	assert( type( params.request ) == 'number' )
@@ -852,9 +846,9 @@ function Publish:marshal()
 	local kwargs = self.kwargs or {}
 
 	-- hack before sending
-	pub_id = Utils.encodeLuaInteger( pub_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	pub_id = WUtils.encodeLuaInteger( pub_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Publish.MESSAGE_TYPE, pub_id, options, self.topic, args, kwargs }
@@ -878,15 +872,14 @@ Format:
 * `[PUBLISHED, PUBLISH.Request|id, Publication|id]`
 --]]
 
-local Published = inheritsFrom( Message )
-Published.NAME = "Published Message"
+local Published = newClass( Message, {name="Published Message"} )
 
 Published.MESSAGE_TYPE = 17  -- wamp message code
 
-function Published:_init( params )
-	-- print( "Published:_init" )
+function Published:__new__( params )
+	-- print( "Published:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.request )=='number' )
@@ -918,8 +911,8 @@ end
 
 function Published:marshal()
 	-- print( "Published:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local publication = Utils.encodeLuaInteger( self.publication )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local publication = WUtils.encodeLuaInteger( self.publication )
 
 	return { Published.MESSAGE_TYPE, request, publication }
 end
@@ -935,8 +928,7 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribe = inheritsFrom( Message )
-Subscribe.NAME = "Subscribe Message"
+local Subscribe = newClass( Message, {name="Subscribe Message"} )
 
 Subscribe.MESSAGE_TYPE = 32  -- wamp message code
 
@@ -944,10 +936,10 @@ Subscribe.MATCH_EXACT = 'exact'
 Subscribe.MATCH_PREFIX = 'prefix'
 Subscribe.MATCH_WILDCARD = 'wildcard'
 
-function Subscribe:_init( params )
-	-- print( "Subscribe:_init" )
+function Subscribe:__new__( params )
+	-- print( "Subscribe:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -995,8 +987,8 @@ function Subscribe:marshal()
 	}
 
 	-- hack before sending
-	request = Utils.encodeLuaInteger( request )
-	options = Utils.encodeLuaTable( options )
+	request = WUtils.encodeLuaInteger( request )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Subscribe.MESSAGE_TYPE, request, options, self.topic }
 end
@@ -1012,15 +1004,14 @@ end
 Format: `[SUBSCRIBE, Request|id, Options|dict, Topic|uri]`
 --]]
 
-local Subscribed = inheritsFrom( Message )
-Subscribed.NAME = "Subscribed Message"
+local Subscribed = newClass( Message, {name="Subscribed Message"} )
 
 Subscribed.MESSAGE_TYPE = 33  -- wamp message code
 
-function Subscribed:_init( params )
-	-- print( "Subscribed:_init" )
+function Subscribed:__new__( params )
+	-- print( "Subscribed:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1055,8 +1046,8 @@ end
 
 function Subscribed:marshal()
 	-- print( "Subscribed:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local subscription = Utils.encodeLuaInteger( self.subscription )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local subscription = WUtils.encodeLuaInteger( self.subscription )
 
 	return { Subscribed.MESSAGE_TYPE, request, subscription }
 end
@@ -1072,15 +1063,14 @@ end
 Format: `[UNSUBSCRIBE, Request|id, SUBSCRIBED.Subscription|id]`
 --]]
 
-local Unsubscribe = inheritsFrom( Message )
-Unsubscribe.NAME = "Unsubscribe Message"
+local Unsubscribe = newClass( Message, {name="Unsubscribe Message"} )
 
 Unsubscribe.MESSAGE_TYPE = 34  -- wamp message code
 
-function Unsubscribe:_init( params )
-	-- print( "Unsubscribe:_init" )
+function Unsubscribe:__new__( params )
+	-- print( "Unsubscribe:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1116,8 +1106,8 @@ end
 
 function Unsubscribe:marshal()
 	-- print( "Unsubscribe:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local subscription = Utils.encodeLuaInteger( self.subscription )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local subscription = WUtils.encodeLuaInteger( self.subscription )
 
 	return { Unsubscribe.MESSAGE_TYPE, request, subscription }
 end
@@ -1129,15 +1119,14 @@ end
 --====================================================================--
 
 
-local Unsubscribed = inheritsFrom( Message )
-Unsubscribed.NAME = "Unsubscribed Message"
+local Unsubscribed = newClass( Message, {name="Unsubscribed Message"} )
 
 Unsubscribed.MESSAGE_TYPE = 35  -- wamp message code
 
-function Unsubscribed:_init( params )
-	-- print( "Unsubscribed:_init" )
+function Unsubscribed:__new__( params )
+	-- print( "Unsubscribed:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1167,7 +1156,7 @@ end
 
 function Unsubscribed:marshal()
 	-- print( "Unsubscribed:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
+	local request = WUtils.encodeLuaInteger( self.request )
 
 	return { Unsubscribed.MESSAGE_TYPE, request }
 end
@@ -1186,15 +1175,14 @@ Formats:
 * `[EVENT, SUBSCRIBED.Subscription|id, PUBLISHED.Publication|id, Details|dict, PUBLISH.Arguments|list, PUBLISH.ArgumentsKw|dict]`
 --]]
 
-local Event = inheritsFrom( Message )
-Event.NAME = "Event Message"
+local Event = newClass( Message, {name="Event Message"} )
 
 Event.MESSAGE_TYPE = 36  -- wamp message code
 
-function Event:_init( params )
-	-- print( "Event:_init" )
+function Event:__new__( params )
+	-- print( "Event:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.subscription)=='number' )
@@ -1231,14 +1219,14 @@ function Event.parse( wmsg )
 
 
 	if #wmsg > 4 then
-		args = wmsg[4]
+		args = wmsg[5]
 		if type(args) ~= 'table' then
 			error( ProtocolError( "invalid type 'args' in EVENT" ) )
 		end
 	end
 
 	if #wmsg > 5 then
-		kwargs = wmsg[5]
+		kwargs = wmsg[6]
 		if type(kwargs) ~= 'table' then
 			error( ProtocolError( "invalid type 'kwargs' in EVENT" ) )
 		end
@@ -1251,11 +1239,10 @@ function Event.parse( wmsg )
 		end
 	end
 
-
 	return Event{
 		subscription=subscription,
 		publication=publication,
-		-- details = wmsg[4],
+		details=details,
 		args=args,
 		kwargs=kwargs,
 		publisher=publisher,
@@ -1273,8 +1260,8 @@ function Event:marshal()
 	local kwargs = self.kwargs or {}
 
 	-- hack before sending
-	details = Utils.encodeLuaTable( details )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	details = WUtils.encodeLuaTable( details )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Event.MESSAGE_TYPE, self.subscription, self.self.publication, details, args, kwargs }
@@ -1300,15 +1287,14 @@ Formats:
 * `[CALL, Request|id, Options|dict, Procedure|uri, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Call = inheritsFrom( Message )
-Call.NAME = "Call Message"
+local Call = newClass( Message, {name="Call Message"} )
 
 Call.MESSAGE_TYPE = 48  -- wamp message code
 
-function Call:_init( params )
-	-- print( "Call:_init" )
+function Call:__new__( params )
+	-- print( "Call:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1357,9 +1343,9 @@ function Call:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Call.MESSAGE_TYPE, req_id, options, self.procedure, args, kwargs }
@@ -1380,8 +1366,7 @@ end
 
 -- Format: ``[CANCEL, CALL.Request|id, Options|dict]``
 
-local Cancel = inheritsFrom( Message )
-Cancel.NAME = "Cancel Message"
+local Cancel = newClass( Message, {name="Cancel Message"} )
 
 Cancel.MESSAGE_TYPE = 49  -- wamp message code
 
@@ -1390,10 +1375,10 @@ Cancel.ABORT = 'abort'
 Cancel.KILL = 'kill'
 
 
-function Cancel:_init( params )
-	-- print( "Cancel:_init" )
+function Cancel:__new__( params )
+	-- print( "Cancel:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -1420,7 +1405,7 @@ function Cancel:marshal()
 	}
 
 	-- hack before sending
-	options = Utils.encodeLuaTable( options )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Cancel.MESSAGE_TYPE, self.request, options }
 end
@@ -1439,15 +1424,14 @@ Formats:
 	* `[RESULT, CALL.Request|id, Details|dict, YIELD.Arguments|list, YIELD.ArgumentsKw|dict]`
 --]]
 
-local Result = inheritsFrom( Message )
-Result.NAME = "Result Message"
+local Result = newClass( Message, {name="Result Message"} )
 
 Result.MESSAGE_TYPE = 50  -- wamp message code
 
-function Result:_init( params )
-	-- print( "Result:_init" )
+function Result:__new__( params )
+	-- print( "Result:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1518,8 +1502,8 @@ function Result:marshal()
 	-- 	discloseMe = self._discloseMe
 	-- }
 
-	-- options = Utils.encodeLuaTable( options )
-	-- self._kwargs = Utils.encodeLuaTable( self._kwargs )
+	-- options = WUtils.encodeLuaTable( options )
+	-- self._kwargs = WUtils.encodeLuaTable( self._kwargs )
 
 	-- if self._kwargs then
 	-- 	return { Result.MESSAGE_TYPE, self._request, options, self._procedure, self._args, self._kwargs }
@@ -1542,15 +1526,14 @@ Format:
 * `[REGISTER, Request|id, Options|dict, Procedure|uri]`
 --]]
 
-local Register = inheritsFrom( Message )
-Register.NAME = "Register Message"
+local Register = newClass( Message, {name="Register Message"} )
 
 Register.MESSAGE_TYPE = 64  -- wamp message code
 
-function Register:_init( params )
-	-- print( "Register:_init" )
+function Register:__new__( params )
+	-- print( "Register:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1598,8 +1581,8 @@ function Register:marshal()
 	local req_id = self.request
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Register.MESSAGE_TYPE, req_id, options, self.procedure }
 end
@@ -1616,15 +1599,14 @@ Format:
 * `[REGISTERED, REGISTER.Request|id, Registration|id]`
 --]]
 
-local Registered = inheritsFrom( Message )
-Registered.NAME = "Registered Message"
+local Registered = newClass( Message, {name="Registered Message"} )
 
 Registered.MESSAGE_TYPE = 65  -- wamp message code
 
-function Registered:_init( params )
-	-- print( "Registered:_init" )
+function Registered:__new__( params )
+	-- print( "Registered:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1667,8 +1649,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Registered.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1685,15 +1667,14 @@ Format:
 * `[UNREGISTER, Request|id, REGISTERED.Registration|id]`
 --]]
 
-local Unregister = inheritsFrom( Message )
-Unregister.NAME = "Unregister Message"
+local Unregister = newClass( Message, {name="Unregister Message"} )
 
 Unregister.MESSAGE_TYPE = 66  -- wamp message code
 
-function Unregister:_init( params )
-	-- print( "Unregister:_init" )
+function Unregister:__new__( params )
+	-- print( "Unregister:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1722,8 +1703,8 @@ end
 function Unregister:marshal()
 	-- print( "Unregister:marshal" )
 
-	local req_id = Utils.encodeLuaInteger( self.request )
-	local reg_id = Utils.encodeLuaInteger( self.registration )
+	local req_id = WUtils.encodeLuaInteger( self.request )
+	local reg_id = WUtils.encodeLuaInteger( self.registration )
 
 	return { Unregister.MESSAGE_TYPE, req_id, reg_id }
 end
@@ -1735,15 +1716,14 @@ end
 --====================================================================--
 
 
-local Unregistered = inheritsFrom( Message )
-Unregistered.NAME = "Unregistered Message Class"
+local Unregistered = newClass( Message, {name="Unregistered Message"} )
 
 Unregistered.MESSAGE_TYPE = 67  -- wamp message code
 
-function Unregistered:_init( params )
-	-- print( "Unregistered:_init" )
+function Unregistered:__new__( params )
+	-- print( "Unregistered:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1781,8 +1761,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Unregistered.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1801,15 +1781,14 @@ Formats:
 * `[INVOCATION, Request|id, REGISTERED.Registration|id, Details|dict, CALL.Arguments|list, CALL.ArgumentsKw|dict]`
 --]]
 
-local Invocation = inheritsFrom( Message )
-Invocation.NAME = "Invocation Message"
+local Invocation = newClass( Message, {name="Invocation Message"} )
 
 Invocation.MESSAGE_TYPE = 68  -- wamp message code
 
-function Invocation:_init( params )
-	-- print( "Invocation:_init" )
+function Invocation:__new__( params )
+	-- print( "Invocation:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1947,8 +1926,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Invocation.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1963,8 +1942,7 @@ end
 
 -- Format: ``[INTERRUPT, CALL.Request|id, Options|dict]``
 
-local Interrupt = inheritsFrom( Message )
-Interrupt.NAME = "Interrupt Message"
+local Interrupt = newClass( Message, {name="Interrupt Message"} )
 
 Interrupt.MESSAGE_TYPE = 69  -- wamp message code
 
@@ -1972,10 +1950,10 @@ Interrupt.ABORT = 'abort'
 Interrupt.KILL = 'kill'
 
 
-function Interrupt:_init( params )
-	-- print( "Interrupt:_init" )
+function Interrupt:__new__( params )
+	-- print( "Interrupt:__new__" )
 	params = params or {}
-	self:superCall( '_init', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -2003,8 +1981,8 @@ function Interrupt:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Interrupt.MESSAGE_TYPE, req_id, options }
 end
@@ -2023,15 +2001,14 @@ Format:
 * `[YIELD, INVOCATION.Request|id, Options|dict, Arguments|list, ArgumentsKw|dict]`
 --]]
 
-local Yield = inheritsFrom( Message )
-Yield.NAME = "Yield Message"
+local Yield = newClass( Message, {name="Yield Message"} )
 
 Yield.MESSAGE_TYPE = 70  -- wamp message code
 
-function Yield:_init( params )
-	-- print( "Yield:_init" )
+function Yield:__new__( params )
+	-- print( "Yield:__new__" )
 	params = params or {}
-	self:superCall( "_init", params )
+	self:superCall( "__new__", params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -2072,9 +2049,9 @@ function Yield:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Yield.MESSAGE_TYPE, req_id, options, args, kwargs }

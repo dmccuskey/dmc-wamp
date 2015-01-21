@@ -2,7 +2,6 @@
 -- dmc-wamp-publish: App Config
 --
 -- for specific application configurations
---
 --====================================================================--
 
 --[[
@@ -16,13 +15,20 @@ However, those changes are typically NOT checked in.
 --]]
 
 
+--====================================================================--
+--== Config Exports
+--====================================================================--
+
+
 local Config = {}
 
 
 Config.server = {
-	host = 'ws://192.168.3.84',
+	host = 'ws://192.168.3.92/ws',
 	port = 8080,
-	realm = 'realm1'
+	realm = 'realm1',
+
+	pubsub_topic = 'com.myapp.topic1'
 }
 
 
