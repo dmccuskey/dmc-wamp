@@ -56,7 +56,7 @@ local json = require 'json'
 
 local Objects = require 'dmc_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
-local Utils = require 'dmc_utils'
+local LuaEventsMixin = require 'lib.dmc_lua.lua_events_mix'
 
 local WError = require 'dmc_wamp.exception'
 local WFutureMixin = require 'dmc_wamp.future_mix'
@@ -72,6 +72,9 @@ local WUtils = require 'dmc_wamp.utils'
 
 
 Patch.addPatch( 'table-pop' )
+
+local EventsMix = LuaEventsMixin.EventsMix
+local FutureMix = WFutureMixin.FutureMix
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
@@ -352,9 +355,7 @@ This class implements:
 ?? * :class:`autobahn.wamp.interfaces.ITransportHandler`
 --]]
 
-local Session = newClass( BaseSession, { name="WAMP Session" } )
-
-WFutureMixin.mixin( Session )
+local Session = newClass( { BaseSession, FutureMix }, { name="WAMP Session" } )
 
 --== Event Constants ==--
 
@@ -367,10 +368,11 @@ Session.ONCHALLENGE = 'on_challenge_wamp_event'
 --======================================================--
 -- Start: Setup DMC Objects
 
-function Session:__init__( params )
-	-- print( "Session:__init__" )
+function Session:__new__( params )
+	-- print( "Session:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	BaseSession.__new__( self, params )
+	FutureMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--
