@@ -59,6 +59,7 @@ local Objects = require 'lib.dmc_lua.lua_objects'
 local Utils = require 'lib.dmc_lua.lua_utils'
 
 local WErrors = require 'dmc_wamp.exception'
+local WUtils = require 'dmc_wamp.utils'
 
 
 
@@ -254,7 +255,7 @@ function Hello:marshal()
 			if not ref.features then ref.features = {} end
 			ref.features[k]=v
 		end
-		details.roles[ role.ROLE ] = Utils.encodeLuaTable( ref )
+		details.roles[ role.ROLE ] = WUtils.encodeLuaTable( ref )
 	end
 
 	if self.authmethods then
@@ -266,7 +267,7 @@ function Hello:marshal()
 	end
 
 	-- hack values
-	details = Utils.encodeLuaTable( details )
+	details = WUtils.encodeLuaTable( details )
 
 	return { Hello.MESSAGE_TYPE, self.realm, details }
 end
@@ -483,7 +484,7 @@ parse() method not implemented because only necessary for routers
 
 function Authenticate:marshal()
 	-- print( "Authenticate:marshal" )
-	local extra = Utils.encodeLuaTable( self.extra )
+	local extra = WUtils.encodeLuaTable( self.extra )
 
 	return { Authenticate.MESSAGE_TYPE, self.signature, extra }
 end
@@ -551,7 +552,7 @@ function Goodbye:marshal()
 	}
 
 	-- hack before sending
-	details = Utils.encodeLuaTable( details )
+	details = WUtils.encodeLuaTable( details )
 
 	return { Goodbye.MESSAGE_TYPE, details, self.reason }
 end
@@ -758,8 +759,8 @@ function Error:marshal()
 	-- 	discloseMe = self.discloseMe
 	-- }
 
-	-- options = Utils.encodeLuaTable( options )
-	-- self.kwargs = Utils.encodeLuaTable( self._kwargs )
+	-- options = WUtils.encodeLuaTable( options )
+	-- self.kwargs = WUtils.encodeLuaTable( self._kwargs )
 
 	-- if self._kwargs then
 	-- 	return { Error.MESSAGE_TYPE, self.request, options, self.procedure, self.args, self._kwargs }
@@ -845,9 +846,9 @@ function Publish:marshal()
 	local kwargs = self.kwargs or {}
 
 	-- hack before sending
-	pub_id = Utils.encodeLuaInteger( pub_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	pub_id = WUtils.encodeLuaInteger( pub_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Publish.MESSAGE_TYPE, pub_id, options, self.topic, args, kwargs }
@@ -910,8 +911,8 @@ end
 
 function Published:marshal()
 	-- print( "Published:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local publication = Utils.encodeLuaInteger( self.publication )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local publication = WUtils.encodeLuaInteger( self.publication )
 
 	return { Published.MESSAGE_TYPE, request, publication }
 end
@@ -986,8 +987,8 @@ function Subscribe:marshal()
 	}
 
 	-- hack before sending
-	request = Utils.encodeLuaInteger( request )
-	options = Utils.encodeLuaTable( options )
+	request = WUtils.encodeLuaInteger( request )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Subscribe.MESSAGE_TYPE, request, options, self.topic }
 end
@@ -1045,8 +1046,8 @@ end
 
 function Subscribed:marshal()
 	-- print( "Subscribed:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local subscription = Utils.encodeLuaInteger( self.subscription )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local subscription = WUtils.encodeLuaInteger( self.subscription )
 
 	return { Subscribed.MESSAGE_TYPE, request, subscription }
 end
@@ -1105,8 +1106,8 @@ end
 
 function Unsubscribe:marshal()
 	-- print( "Unsubscribe:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
-	local subscription = Utils.encodeLuaInteger( self.subscription )
+	local request = WUtils.encodeLuaInteger( self.request )
+	local subscription = WUtils.encodeLuaInteger( self.subscription )
 
 	return { Unsubscribe.MESSAGE_TYPE, request, subscription }
 end
@@ -1155,7 +1156,7 @@ end
 
 function Unsubscribed:marshal()
 	-- print( "Unsubscribed:marshal" )
-	local request = Utils.encodeLuaInteger( self.request )
+	local request = WUtils.encodeLuaInteger( self.request )
 
 	return { Unsubscribed.MESSAGE_TYPE, request }
 end
@@ -1259,8 +1260,8 @@ function Event:marshal()
 	local kwargs = self.kwargs or {}
 
 	-- hack before sending
-	details = Utils.encodeLuaTable( details )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	details = WUtils.encodeLuaTable( details )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Event.MESSAGE_TYPE, self.subscription, self.self.publication, details, args, kwargs }
@@ -1342,9 +1343,9 @@ function Call:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Call.MESSAGE_TYPE, req_id, options, self.procedure, args, kwargs }
@@ -1404,7 +1405,7 @@ function Cancel:marshal()
 	}
 
 	-- hack before sending
-	options = Utils.encodeLuaTable( options )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Cancel.MESSAGE_TYPE, self.request, options }
 end
@@ -1501,8 +1502,8 @@ function Result:marshal()
 	-- 	discloseMe = self._discloseMe
 	-- }
 
-	-- options = Utils.encodeLuaTable( options )
-	-- self._kwargs = Utils.encodeLuaTable( self._kwargs )
+	-- options = WUtils.encodeLuaTable( options )
+	-- self._kwargs = WUtils.encodeLuaTable( self._kwargs )
 
 	-- if self._kwargs then
 	-- 	return { Result.MESSAGE_TYPE, self._request, options, self._procedure, self._args, self._kwargs }
@@ -1580,8 +1581,8 @@ function Register:marshal()
 	local req_id = self.request
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Register.MESSAGE_TYPE, req_id, options, self.procedure }
 end
@@ -1648,8 +1649,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Registered.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1702,8 +1703,8 @@ end
 function Unregister:marshal()
 	-- print( "Unregister:marshal" )
 
-	local req_id = Utils.encodeLuaInteger( self.request )
-	local reg_id = Utils.encodeLuaInteger( self.registration )
+	local req_id = WUtils.encodeLuaInteger( self.request )
+	local reg_id = WUtils.encodeLuaInteger( self.registration )
 
 	return { Unregister.MESSAGE_TYPE, req_id, reg_id }
 end
@@ -1760,8 +1761,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Unregistered.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1925,8 +1926,8 @@ end
 -- 		discloseCaller = self.discloseCaller,
 -- 	}
 
--- 	options = Utils.encodeLuaTable( options )
--- 	self.kwargs = Utils.encodeLuaTable( self.kwargs )
+-- 	options = WUtils.encodeLuaTable( options )
+-- 	self.kwargs = WUtils.encodeLuaTable( self.kwargs )
 
 -- 	return { Invocation.MESSAGE_TYPE, self.request, options, self.procedure }
 -- end
@@ -1980,8 +1981,8 @@ function Interrupt:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
 
 	return { Interrupt.MESSAGE_TYPE, req_id, options }
 end
@@ -2048,9 +2049,9 @@ function Yield:marshal()
 	}
 
 	-- hack before sending
-	req_id = Utils.encodeLuaInteger( req_id )
-	options = Utils.encodeLuaTable( options )
-	kwargs = Utils.encodeLuaTable( kwargs )
+	req_id = WUtils.encodeLuaInteger( req_id )
+	options = WUtils.encodeLuaTable( options )
+	kwargs = WUtils.encodeLuaTable( kwargs )
 
 	if self.kwargs then
 		return { Yield.MESSAGE_TYPE, req_id, options, args, kwargs }

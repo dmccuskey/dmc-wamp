@@ -58,6 +58,7 @@ local json = require 'json'
 local Objects = require 'lib.dmc_lua.lua_objects'
 
 local WMessageFactory = require 'dmc_wamp.message'
+local WUtils = require 'dmc_wamp.utils'
 
 
 
@@ -147,8 +148,8 @@ JsonObjSerializer.BINARY = false
 function JsonObjSerializer:serialize( msg )
 	-- print( "JsonObjSerializer:serialize", msg )
 	local encoded_json = json.encode( msg )
-	encoded_json = Utils.decodeLuaTable( encoded_json )
-	encoded_json = Utils.decodeLuaInteger( encoded_json )
+	encoded_json = WUtils.decodeLuaTable( encoded_json )
+	encoded_json = WUtils.decodeLuaInteger( encoded_json )
 	return encoded_json
 end
 
