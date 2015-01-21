@@ -181,8 +181,9 @@ Wamp.ONDISCONNECT = 'wamp_on_disconnect_event'
 -- these are events from dmc_wamp, not WAMP
 -- to make more Corona-esque
 Wamp.ONSUBSCRIBED = 'wamp_on_subscribed_event'
-Wamp.ONPUBLISH = 'wamp_on_pub_event'
+Wamp.ONPUBLISH = 'wamp_on_publish_event'
 Wamp.ONUNSUBSCRIBED = 'wamp_on_unsubscribed_event'
+Wamp.ONPUBLISHED = 'wamp_on_published_event'
 
 
 --======================================================--
@@ -339,11 +340,39 @@ end
 -- acknowledge boolean
 --
 function Wamp:publish( topic, params )
-	-- print( "Wamp:publish", topic )
+	-- print( "Wamp:publish", topic, params )
+	params = params or {}
+	params.options = params.options or {}
+	--==--
+	params.options.acknowledge=true -- activate WAMP callbacks
+
+	local success_f, error_f
+	local handler = params.callback
+
+	success_f = function( sub )
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONPUBLISHED
+		}
+		if handler then handler( evt ) end
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONPUBLISHED,
+			error=err
+		}
+		if handler then handler( evt ) end
+	end
 
 	try{
 		function()
-			self._session:publish( topic, params )
+			local def = self._session:publish( topic, params )
+			def:addCallbacks( success_f, error_f )
+			return def
 		end,
 
 		catch{
@@ -363,6 +392,7 @@ function Wamp:publish( topic, params )
 						reason="WAMP Internal Error ({})"
 					}
 				end
+				error_f(e)
 			end
 		}
 	}

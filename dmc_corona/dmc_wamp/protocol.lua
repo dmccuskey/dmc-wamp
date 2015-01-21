@@ -57,6 +57,7 @@ local json = require 'json'
 local Objects = require 'dmc_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
 local LuaEventsMixin = require 'lib.dmc_lua.lua_events_mix'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 local WError = require 'dmc_wamp.exception'
 local WFutureMixin = require 'dmc_wamp.future_mix'
@@ -613,8 +614,9 @@ function Session:onMessage( msg )
 
 		local pub_req = tpop( self._publish_reqs, msg.request )
 		local def, opts = unpack( pub_req )
+		local pub = Publication:new{ publication=msg.publication }
 
-		self:_resolve_future( def, Publication:new({ publication_id=msg.publication }) )
+		self:_resolve_future( def, pub )
 
 
 	--== Subscribed Message
@@ -905,19 +907,25 @@ function Session:publish( topic, params )
 		error( WError.TransportError() )
 	end
 
-	local options = params.options or {}
+	local opts = params.options or {}
 	local request = WUtils.id()
-	local msg = WMessageFactory.Publish:new{
+	local msg, p
+	p = {
 		request=request,
 		topic=topic,
-		options=options,
 		args=params.args,
 		kwargs=params.kwargs
 	}
+	-- layer in publish message options
+	if opts.options then
+		p = Utils.extend( opts.options, p )
+	end
 
-	if options.acknowledge == true then
+	msg = WMessageFactory.Publish:new( p )
+
+	if opts.acknowledge == true then
 		local def = self:_create_future()
-		self._publish_reqs[ request ] = { def, options }
+		self._publish_reqs[ request ] = { def, opts }
 		self._transport:send( msg )
 		return def
 	else
