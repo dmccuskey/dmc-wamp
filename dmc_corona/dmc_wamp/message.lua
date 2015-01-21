@@ -55,8 +55,8 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 local WErrors = require 'dmc_wamp.exception'
 
@@ -70,7 +70,6 @@ local ProtocolError = WErrors.ProtocolErrorFactory
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
 
 
 -- strict URI check allowing empty URI components
@@ -186,12 +185,12 @@ end
 --====================================================================--
 
 
-local Message = newClass( ObjectBase, {name="Message Base"} )
+local Message = newClass( nil, {name="Message Base"} )
 
-function Message:__init__( params )
-	-- print( "Message:__init__" )
+function Message:__new__( params )
+	-- print( "Message:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	self.serialized = {}
@@ -216,10 +215,10 @@ local Hello = newClass( Message, {name="Hello Message"} )
 
 Hello.MESSAGE_TYPE = 1  -- wamp message code
 
-function Hello:__init__( params )
-	-- print( "Hello:__init__" )
+function Hello:__new__( params )
+	-- print( "Hello:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.realm )=='string' )
 	assert( type( params.roles )=='table' )
@@ -285,10 +284,10 @@ local Welcome = newClass( Message, {name="Welcome Message"} )
 
 Welcome.MESSAGE_TYPE = 2  -- wamp message code
 
-function Welcome:__init__( params )
-	-- print( "Welcome:__init__" )
+function Welcome:__new__( params )
+	-- print( "Welcome:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type(params.session)=='number' )
 	assert( type(params.roles)=='table' )
@@ -337,10 +336,10 @@ local Abort = newClass( Message, {name="Abort Message"} )
 
 Abort.MESSAGE_TYPE = 3  -- wamp message code
 
-function Abort:__init__( params )
-	-- print( "Abort:__init__" )
+function Abort:__new__( params )
+	-- print( "Abort:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.reason )=='string' )
 	assert( params.message == nil or type( params.message )=='string' )
@@ -400,10 +399,10 @@ local Challenge = newClass( Message, {name="Challenge Message"} )
 
 Challenge.MESSAGE_TYPE = 4  -- wamp message code
 
-function Challenge:__init__( params )
-	-- print( "Challenge:__init__" )
+function Challenge:__new__( params )
+	-- print( "Challenge:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.method )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -460,11 +459,11 @@ local Authenticate = newClass( Message, {name="Authenticate Message"} )
 
 Authenticate.MESSAGE_TYPE = 5  -- wamp message code
 
-function Authenticate:__init__( params )
-	-- print( "Authenticate:__init__" )
+function Authenticate:__new__( params )
+	-- print( "Authenticate:__new__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.signature )=='string' )
 	assert( params.extra == nil or type( params.extra )=='table' )
@@ -503,10 +502,10 @@ local Goodbye = newClass( Message, {name="Goodbye Message"} )
 Goodbye.MESSAGE_TYPE = 6  -- wamp message code
 Goodbye.DEFAULT_REASON = 'wamp.goodbye.normal'
 
-function Goodbye:__init__( params )
-	-- print( "Goodbye:__init__" )
+function Goodbye:__new__( params )
+	-- print( "Goodbye:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.reason )=='string' )
@@ -573,10 +572,10 @@ local Heartbeat = newClass( Message, {name="Heartbeat Message"} )
 
 Heartbeat.MESSAGE_TYPE = 7  -- wamp message code
 
-function Heartbeat:__init__( params )
-	-- print( "Heartbeat:__init__" )
+function Heartbeat:__new__( params )
+	-- print( "Heartbeat:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.incoming ) == 'number' )
 	assert( type( params.outgoing ) == 'number' )
@@ -667,10 +666,10 @@ local Error = newClass( Message, {name="Error Message"} )
 
 Error.MESSAGE_TYPE = 8  -- wamp message code
 
-function Error:__init__( params )
-	-- print( "Error:__init__" )
+function Error:__new__( params )
+	-- print( "Error:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.request_type )=='number' )
@@ -789,10 +788,10 @@ local Publish = newClass( Message, {name="Publish Message"} )
 
 Publish.MESSAGE_TYPE = 16  -- wamp message code
 
-function Publish:__init__( params )
-	-- print( "Publish:__init__" )
+function Publish:__new__( params )
+	-- print( "Publish:__new__" )
 	params = params or {}
-	self:superCall( "__init__", params )
+	self:superCall( "__new__", params )
 	--==--
 
 	assert( type( params.request ) == 'number' )
@@ -876,10 +875,10 @@ local Published = newClass( Message, {name="Published Message"} )
 
 Published.MESSAGE_TYPE = 17  -- wamp message code
 
-function Published:__init__( params )
-	-- print( "Published:__init__" )
+function Published:__new__( params )
+	-- print( "Published:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type( params.request )=='number' )
@@ -936,10 +935,10 @@ Subscribe.MATCH_EXACT = 'exact'
 Subscribe.MATCH_PREFIX = 'prefix'
 Subscribe.MATCH_WILDCARD = 'wildcard'
 
-function Subscribe:__init__( params )
-	-- print( "Subscribe:__init__" )
+function Subscribe:__new__( params )
+	-- print( "Subscribe:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1008,10 +1007,10 @@ local Subscribed = newClass( Message, {name="Subscribed Message"} )
 
 Subscribed.MESSAGE_TYPE = 33  -- wamp message code
 
-function Subscribed:__init__( params )
-	-- print( "Subscribed:__init__" )
+function Subscribed:__new__( params )
+	-- print( "Subscribed:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1067,10 +1066,10 @@ local Unsubscribe = newClass( Message, {name="Unsubscribe Message"} )
 
 Unsubscribe.MESSAGE_TYPE = 34  -- wamp message code
 
-function Unsubscribe:__init__( params )
-	-- print( "Unsubscribe:__init__" )
+function Unsubscribe:__new__( params )
+	-- print( "Unsubscribe:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1123,10 +1122,10 @@ local Unsubscribed = newClass( Message, {name="Unsubscribed Message"} )
 
 Unsubscribed.MESSAGE_TYPE = 35  -- wamp message code
 
-function Unsubscribed:__init__( params )
-	-- print( "Unsubscribed:__init__" )
+function Unsubscribed:__new__( params )
+	-- print( "Unsubscribed:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1179,10 +1178,10 @@ local Event = newClass( Message, {name="Event Message"} )
 
 Event.MESSAGE_TYPE = 36  -- wamp message code
 
-function Event:__init__( params )
-	-- print( "Event:__init__" )
+function Event:__new__( params )
+	-- print( "Event:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.subscription)=='number' )
@@ -1291,10 +1290,10 @@ local Call = newClass( Message, {name="Call Message"} )
 
 Call.MESSAGE_TYPE = 48  -- wamp message code
 
-function Call:__init__( params )
-	-- print( "Call:__init__" )
+function Call:__new__( params )
+	-- print( "Call:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1375,10 +1374,10 @@ Cancel.ABORT = 'abort'
 Cancel.KILL = 'kill'
 
 
-function Cancel:__init__( params )
-	-- print( "Cancel:__init__" )
+function Cancel:__new__( params )
+	-- print( "Cancel:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -1428,10 +1427,10 @@ local Result = newClass( Message, {name="Result Message"} )
 
 Result.MESSAGE_TYPE = 50  -- wamp message code
 
-function Result:__init__( params )
-	-- print( "Result:__init__" )
+function Result:__new__( params )
+	-- print( "Result:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1530,10 +1529,10 @@ local Register = newClass( Message, {name="Register Message"} )
 
 Register.MESSAGE_TYPE = 64  -- wamp message code
 
-function Register:__init__( params )
-	-- print( "Register:__init__" )
+function Register:__new__( params )
+	-- print( "Register:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1603,10 +1602,10 @@ local Registered = newClass( Message, {name="Registered Message"} )
 
 Registered.MESSAGE_TYPE = 65  -- wamp message code
 
-function Registered:__init__( params )
-	-- print( "Registered:__init__" )
+function Registered:__new__( params )
+	-- print( "Registered:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1671,10 +1670,10 @@ local Unregister = newClass( Message, {name="Unregister Message"} )
 
 Unregister.MESSAGE_TYPE = 66  -- wamp message code
 
-function Unregister:__init__( params )
-	-- print( "Unregister:__init__" )
+function Unregister:__new__( params )
+	-- print( "Unregister:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1720,10 +1719,10 @@ local Unregistered = newClass( Message, {name="Unregistered Message"} )
 
 Unregistered.MESSAGE_TYPE = 67  -- wamp message code
 
-function Unregistered:__init__( params )
-	-- print( "Unregistered:__init__" )
+function Unregistered:__new__( params )
+	-- print( "Unregistered:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1785,10 +1784,10 @@ local Invocation = newClass( Message, {name="Invocation Message"} )
 
 Invocation.MESSAGE_TYPE = 68  -- wamp message code
 
-function Invocation:__init__( params )
-	-- print( "Invocation:__init__" )
+function Invocation:__new__( params )
+	-- print( "Invocation:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	assert( type(params.request)=='number' )
@@ -1950,10 +1949,10 @@ Interrupt.ABORT = 'abort'
 Interrupt.KILL = 'kill'
 
 
-function Interrupt:__init__( params )
-	-- print( "Interrupt:__init__" )
+function Interrupt:__new__( params )
+	-- print( "Interrupt:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.request )=='number' )
 	assert( params.mode==nil or type(params.mode)=='string' )
@@ -2005,10 +2004,10 @@ local Yield = newClass( Message, {name="Yield Message"} )
 
 Yield.MESSAGE_TYPE = 70  -- wamp message code
 
-function Yield:__init__( params )
-	-- print( "Yield:__init__" )
+function Yield:__new__( params )
+	-- print( "Yield:__new__" )
 	params = params or {}
-	self:superCall( "__init__", params )
+	self:superCall( "__new__", params )
 	--==--
 
 	assert( type(params.request)=='number' )

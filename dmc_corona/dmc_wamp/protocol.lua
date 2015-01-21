@@ -75,7 +75,7 @@ Patch.addPatch( 'table-pop' )
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
+local Class = Objects.Class
 
 local tpop = table.pop
 
@@ -89,11 +89,11 @@ local tpop = table.pop
 --[[
 --]]
 
-local Endpoint = newClass( ObjectBase, {name="Endpoint"} )
+local Endpoint = newClass( nil, {name="Endpoint"} )
 
-function Endpoint:__init__( params )
+function Endpoint:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.obj )
 	assert( params.fn )
@@ -115,11 +115,11 @@ end
 --[[
 --]]
 
-local Handler = newClass( ObjectBase, {name="Handler"} )
+local Handler = newClass( nil, {name="Handler"} )
 
-function Handler:__init__( params )
+function Handler:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.fn )
 	assert( params.topic )
@@ -132,7 +132,7 @@ function Handler:__init__( params )
 	-- this addition is for more Corona-ism
 	-- used in added unsubscribe() method to Session
 	self.subscription = params.subscription
-	
+
 end
 
 
@@ -147,11 +147,11 @@ Object representing a publication.
 This class implements :class:`autobahn.wamp.interfaces.IPublication`.
 --]]
 
-local Publication = newClass( ObjectBase, {name="Publication"} )
+local Publication = newClass( nil, {name="Publication"} )
 
-function Publication:__init__( params )
+function Publication:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.publication_id )
 
@@ -170,11 +170,11 @@ Object representing a subscription.
 This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
 --]]
 
-local Subscription = newClass( ObjectBase, {name="Subscription"} )
+local Subscription = newClass( nil, {name="Subscription"} )
 
-function Subscription:__init__( params )
+function Subscription:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.subscription_id )
@@ -203,11 +203,11 @@ Object representing a registration.
 This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
 --]]
 
-local Registration = newClass( ObjectBase, {name="Registration"} )
+local Registration = newClass( nil, {name="Registration"} )
 
-function Registration:__init__( params )
+function Registration:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.registration_id )
@@ -243,11 +243,12 @@ This class implements:
 :class:`autobahn.wamp.interfaces.ISession`
 --]]
 
-local BaseSession = newClass( ObjectBase, {name="Base Session"} )
+local BaseSession = newClass( { Class, EventsMix }, {name="Base Session"} )
 
-function BaseSession:__init__( params )
+function BaseSession:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	Class.__new__( self, params )
+	EventsMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--

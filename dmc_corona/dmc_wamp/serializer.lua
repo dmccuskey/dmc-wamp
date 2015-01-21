@@ -55,8 +55,7 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
 
 local WMessageFactory = require 'dmc_wamp.message'
 
@@ -79,10 +78,10 @@ local ObjectBase = Objects.ObjectBase
 
 local Serializer = newClass( ObjectBase, { name="Serializer" } )
 
-function Serializer:__init__( params )
+function Serializer:__new__( params )
 	-- print( "Serializer:__init__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 
 	if self.is_class then return end

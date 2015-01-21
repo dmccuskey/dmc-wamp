@@ -53,8 +53,8 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-local Error = require 'lua_error'
-local Objects = require 'dmc_objects'
+local Error = require 'lib.dmc_lua.lua_error'
+local Objects = require 'lib.dmc_lua.lua_objects'
 
 
 
@@ -78,12 +78,12 @@ Base class for all exceptions related to WAMP
 
 local WAMPError = newClass( Error, {name="WAMP Error Base"} )
 
-function WAMPError:__init__( reason )
-	-- print( "WAMPError:__init__" )
+function WAMPError:__new__( reason )
+	-- print( "WAMPError:__new__" )
 	local p = {
 		reason or "unknown reason"
 	}
-	self:superCall( '__init__', p )
+	self:superCall( '__new__', p )
 	--==--
 	self.reason = p.reason
 end
@@ -132,12 +132,12 @@ the WAMP session was lost or is not connected
 local TransportLost = newClass( WAMPError, {name="Transport Lost Error"} )
 
 
-function TransportLost:__init__( reason )
-	-- print( "TransportLost:__init__" )
+function TransportLost:__new__( reason )
+	-- print( "TransportLost:__new__" )
 	local p = {
 		reason="WAMP transport lost"
 	}
-	self:superCall( '__init__', p )
+	self:superCall( '__new__', p )
 end
 
 
@@ -260,10 +260,10 @@ ApplicationError.NO_ELIGIBLE_CALLEE = "wamp.error.no_eligible_callee"
 --
 -- params.error - The URI of the error that occurred, eg `wamp.error.not_authorized`
 --
-function ApplicationError:__init__( params )
-	-- print( "ApplicationError:__init__" )
+function ApplicationError:__new__( params )
+	-- print( "ApplicationError:__new__" )
 	params = params or {}
-	self:superCall( '__init__', p )
+	self:superCall( '__new__', p )
 	--==--
 	assert( type( params.error ) == 'string' )
 
