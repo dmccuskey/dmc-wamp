@@ -181,9 +181,9 @@ Wamp.ONDISCONNECT = 'wamp_on_disconnect_event'
 -- these are events from dmc_wamp, not WAMP
 -- to make more Corona-esque
 Wamp.ONSUBSCRIBED = 'wamp_on_subscribed_event'
-Wamp.ONPUBLISH = 'wamp_on_publish_event'
+Wamp.ONPUBLISH = 'wamp_on_publish_event' -- data event from subscripton
 Wamp.ONUNSUBSCRIBED = 'wamp_on_unsubscribed_event'
-Wamp.ONPUBLISHED = 'wamp_on_published_event'
+Wamp.ONPUBLISHED = 'wamp_on_published_event' -- our publish is ok
 
 Wamp.ONRESULT = 'wamp_on_result_event'
 Wamp.ONPROGRESS = 'wamp_on_progress_event'
@@ -413,7 +413,9 @@ function Wamp:publish( topic, params )
 	-- print( "Wamp:publish", topic, params )
 	params = params or {}
 	params.options = params.options or {}
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
 	--==--
+
 	params.options.acknowledge=true -- activate WAMP callbacks
 
 	local success_f, error_f
@@ -482,6 +484,8 @@ function Wamp:subscribe( topic, handler, params )
 	-- print( "Wamp:subscribe", topic, handler )
 	params = params or {}
 	params.options = params.options or {}
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
 	--==--
 
 	local def, decorate_f, success_f, error_f
@@ -528,6 +532,9 @@ end
 --
 function Wamp:unsubscribe( topic, handler )
 	-- print( "Wamp:unsubscribe", topic, handler )
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
+	--==--
 
 	local key = self:_createPubSubKey( topic, handler )
 	local subscription = self._subscriptions[key]
