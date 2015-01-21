@@ -675,27 +675,31 @@ function Session:onMessage( msg )
 			return
 		end
 
-		local call_req
-
-		-- TODO: progressive result, etc
-
+		-- Progress
+		--
 		if msg.progress then
-			-- Progressive result
-			call_req = self._call_reqs[ msg.request ]
+			local _, opts = self._call_reqs[ msg.request ]
+			if opts.onProgress then
+				opts.onProgress( msg.args, msg.kwargs )
+			end
 
+		-- Result
+		--
 		else
-			-- Final result
-			call_req = tpop( self._call_reqs, msg.request )
+			local call_req = tpop( self._call_reqs, msg.request )
+			local def, opts = unpack( call_req )
 
-			if #msg.args == 1 and not msg.kwargs then
-				p = { data=msg.args[1] }
+			if not msg.args and not msg.kwargs then
+				self:_resolve_future( def, nil )
 			else
-				p = {
+				local res = WTypes.CallResult:new{
 					results=msg.args,
 					kwresults=msg.kwargs
 				}
+
+				self:_resolve_future( def, res )
 			end
-			if call_req.onResult then call_req.onResult( p ) end
+
 		end
 
 
@@ -916,7 +920,7 @@ function Session:publish( topic, params )
 		args=params.args,
 		kwargs=params.kwargs
 	}
-	-- layer in publish message options
+	-- layer in Publish message options
 	if opts.options then
 		p = Utils.extend( opts.options, p )
 	end
@@ -1029,29 +1033,38 @@ end
 function Session:call( procedure, params )
 	-- print( "Session:call", procedure )
 	params = params or {}
-	params.args = params.args or {}
-	params.kwargs =  params.kwargs or {}
 	--==--
+
+	assert( type(procedure)=='string' )
 
 	if not self._transport then
 		error( WError.TransportLostError() )
 	end
 
-	local request, msg
+	local opts = params.options or {}
+	local def, request, msg, p
 
+	def = self:_create_future()
 	request = WUtils.id()
 
-	self._call_reqs[ request ] = params
-
-	msg = WMessageFactory.Call:new{
+	p = {
 		request = request,
 		procedure = procedure,
 		args = params.args,
 		kwargs = params.kwargs,
-		--
 	}
+	-- layer in Call message options
+	if opts.options then
+		p = Utils.extend( opts.options, p )
+	end
+
+	msg = WMessageFactory.Call:new( p )
+
+	self._call_reqs[ request ] = { def, opts }
+
 	self._transport:send( msg )
 
+	return def
 end
 
 

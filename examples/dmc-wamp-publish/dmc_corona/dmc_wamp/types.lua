@@ -112,7 +112,7 @@ local HelloReturn = newClass( nil, {name="Hello Return Base"} )
 --====================================================================--
 
 
-local Accept = newClass( nil, {name="Accept"} )
+local Accept = newClass( HelloReturn, {name="Accept"} )
 
 function Accept:__new__( params )
 	-- print( "Accept:__new__" )
@@ -122,12 +122,10 @@ function Accept:__new__( params )
 	assert( params.authid == nil or type( params.authid ) == 'string' )
 	assert( params.authrole == nil or type( params.authrole ) == 'string' )
 	assert( params.authmethod == nil or type( params.authmethod ) == 'string' )
-	assert( params.authprovider == nil or type( params.authprovider ) == 'string' )
 
 	self.authid = params.authid
 	self.authrole = params.authrole
 	self.authmethod = params.authmethod
-	self.authprovider = params.authprovider
 end
 
 
@@ -188,8 +186,6 @@ function HelloDetails:__new__( params )
 	--==--
 	self.roles = params.roles
 	self.authmethods = params.authmethods
-	self.authid = params.authid
-	self.pending_session = params.pending_session
 end
 
 
@@ -211,7 +207,6 @@ function SessionDetails:__new__( params )
 	self.authid = params.authid
 	self.authrole = params.authrole
 	self.authmethod = params.authmethod
-	self.authprovider = params.authprovider
 end
 
 
@@ -239,6 +234,11 @@ end
 --====================================================================--
 
 
+--[[
+Used to provide options for subscribing in
+:func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+--]]
+
 local SubscribeOptions = newClass( nil, {name="Subscribe Options"} )
 
 function SubscribeOptions:__new__( params )
@@ -249,11 +249,61 @@ function SubscribeOptions:__new__( params )
 	assert( params.match==nil or ( type( params.match ) == 'string' and Utils.propertyIn( { 'exact', 'prefix', 'wildcard' }, params.match ) ) )
 	assert( params.details_arg == nil or type( params.details_arg ) == 'string' )
 
-	self.match = params.match
 	self.details_arg = params.details_arg
+	self.options = {match=params.match}
+end
 
-	-- options dict as sent within WAMP message
-	self.options = {match=match}
+
+
+--====================================================================--
+--== Event Details Class
+--====================================================================--
+
+
+--[[
+Provides details on an event when calling an event handler
+previously registered
+--]]
+
+local EventDetails = newClass( nil, {name="Event Details"} )
+
+function EventDetails:__new__( params )
+	-- print( "EventDetails:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	self.publication = params.publication
+	self.publisher = params.publisher
+end
+
+
+
+--====================================================================--
+--== Publish Options Class
+--====================================================================--
+
+
+local PublishOptions = newClass( nil, {name="Publish Options"} )
+
+function PublishOptions:__new__( params )
+	-- print( "PublishOptions:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	assert( params.acknowledge==nil or type( params.acknowledge )=='boolean' )
+	assert( params.excludeMe==nil or type( params.excludeMe )=='boolean' )
+	-- TODO: make sure all numbers
+	assert( params.exclude==nil or ( type( params.exclude )=='table' ) )
+	assert( params.eligible==nil or ( type( params.eligible )=='table' ) )
+	assert( params.discloseMe == nil or type( params.discloseMe )=='string' )
+
+	self.options = {
+		acknowledge=params.acknowledge,
+		excludeMe=params.excludeMe,
+		exclude=params.exclude,
+		eligible=params.eligible,
+		discloseMe=params.discloseMe
+	}
 end
 
 
@@ -300,6 +350,57 @@ end
 
 
 
+--====================================================================--
+--== Call Options Class
+--====================================================================--
+
+
+local CallOptions = newClass( nil, {name="Call Options"} )
+
+function CallOptions:__new__( params )
+	-- print( "CallOptions:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	assert( params.onProgress==nil or type( params.onProgress )=='function' )
+	assert( params.timeout==nil or ( type( params.timeout )=='number' and params.timeout>0 ) )
+	assert( params.discloseMe==nil or type( params.discloseMe )=='boolean' )
+	assert( params.runOn==nil or ( type( params.runOn )=='string' and Utils.propertyIn({'all', 'any', 'partition'}, params.runOn)) )
+
+	self.options = {
+		timeout=params.timeout,
+		discloseMe=params.discloseMe
+	}
+	self.onProgress = params.onProgress
+	if params.onProgress then
+		self.options.receive_progress = true
+	end
+
+end
+
+
+
+--====================================================================--
+--== Call Results Class
+--====================================================================--
+
+
+local CallResult = newClass( nil, {name="Call Result"} )
+
+function CallResult:__new__( params )
+	-- print( "CallResult:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	self.results = params.results
+	self.kwresults = params.kwresults
+end
+
+-- function CallResult:__tostring__()
+-- 	return "Call Result"
+-- end
+
+
 
 --====================================================================--
 --== Types Facade
@@ -308,14 +409,18 @@ end
 
 return {
 	ComponentConfig=ComponentConfig,
-	-- Router Options,
+	-- Router Options -- not implemented,
 	Accept=Accept,
 	Deny=Deny,
 	Challenge=Challenge,
 	HelloDetails=HelloDetails,
 	SessionDetails=SessionDetails,
+	CloseDetails=CloseDetails,
 	SubscribeOptions=SubscribeOptions,
+	EventDetails=EventDetails,
+	PublishOptions=PublishOptions,
 	RegisterOptions=RegisterOptions,
 	CallDetails=CallDetails,
-	CloseDetails=CloseDetails,
+	CallOptions=CallOptions,
+	CallResult=CallResult
 }
