@@ -178,6 +178,16 @@ Wamp.ONCONNECT = 'wamp_on_connect_event'
 Wamp.ONDISCONNECT = 'wamp_on_disconnect_event'
 -- Wamp.ONCLOSE = 'onclose'
 
+-- these are events from dmc_wamp, not WAMP
+-- to make more Corona-esque
+Wamp.ONSUBSCRIBED = 'wamp_on_subscribed_event'
+Wamp.ONPUBLISH = 'wamp_on_publish_event' -- data event from subscripton
+Wamp.ONUNSUBSCRIBED = 'wamp_on_unsubscribed_event'
+Wamp.ONPUBLISHED = 'wamp_on_published_event' -- our publish is ok
+
+Wamp.ONRESULT = 'wamp_on_result_event'
+Wamp.ONPROGRESS = 'wamp_on_progress_event'
+
 
 --======================================================--
 -- Start: Setup DMC Objects
@@ -214,6 +224,8 @@ function Wamp:__init__( params )
 		onchallenge=params.onChallenge
 	}
 
+	self._subscriptions = {}
+
 	self._protocols = params.protocols
 
 	--== Object References ==--
@@ -239,8 +251,10 @@ end
 --======================================================--
 
 
+
 --====================================================================--
 --== Public Methods
+
 
 -- is_connected, getter, boolean
 --
@@ -258,19 +272,86 @@ end
 -- onResult - callback
 -- onProgress - callback
 -- onError - callback
-function Wamp:call( procedure, params )
-	-- print( "Wamp:call", procedure )
+function Wamp:call( procedure, handler, params )
+	-- print( "Wamp:call", procedure, handler )
 	params = params or {}
+	params.options = params.options or {}
+	assert( type(procedure)=='string', "Wamp:call :: incorrect type for procedure" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
 	--==--
 
-	local onError = params.onError
+	local success_f, progress_f, error_f
 
-	params.onError = function( event )
-		-- print( "Wamp:call, on error")
-		if onError then onError( event ) end
+	success_f = function( res )
+		assert( res and res.isa and res:isa(WTypes.CallResult) )
+		if res.results and #res.results==1 and not res.kwresults then
+		end
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONRESULT,
+			results=res.results,
+			kwresults=res.kwresults,
+		}
+		-- make it easier to get to single result item
+		if res.results and #res.results==1 and not res.kwresults then
+			evt.data = res.results[1]
+		end
+		if handler then handler( evt ) end
 	end
 
-	return self._session:call( procedure, params )
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONRESULT,
+			error=err
+		}
+		if handler then handler( evt ) end
+	end
+
+	progress_f = function( args, kwargs )
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONPROGRESS,
+			args=args,
+			kwargs=kwargs
+		}
+		if handler then handler( evt ) end
+	end
+
+	params.options.onProgress = progress_f
+
+	try{
+		function()
+			local def = self._session:call( procedure, params )
+			def:addCallbacks( success_f, error_f )
+			return def
+		end,
+
+		catch{
+			function(e)
+				if type(e)=='string' then
+					error( e )
+				elseif e:isa( WError.ProtocolError ) then
+					print( e.traceback )
+					self:_bailout{
+						code=WebSocket.CLOSE_STATUS_CODE_PROTOCOL_ERROR,
+						reason="WAMP Protocol Error"
+					}
+				else
+					print( e.traceback )
+					self:_bailout{
+						code=WebSocket.CLOSE_STATUS_CODE_INTERNAL_ERROR,
+						reason="WAMP Internal Error ({})"
+					}
+				end
+				error_f(e)
+			end
+		}
+	}
+
 end
 
 -- register()
@@ -329,11 +410,41 @@ end
 -- acknowledge boolean
 --
 function Wamp:publish( topic, params )
-	-- print( "Wamp:publish", topic )
+	-- print( "Wamp:publish", topic, params )
+	params = params or {}
+	params.options = params.options or {}
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
+	--==--
+
+	params.options.acknowledge=true -- activate WAMP callbacks
+
+	local success_f, error_f
+	local handler = params.callback
+
+	success_f = function( sub )
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONPUBLISHED
+		}
+		if handler then handler( evt ) end
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONPUBLISHED,
+			error=err
+		}
+		if handler then handler( evt ) end
+	end
 
 	try{
 		function()
-			self._session:publish( topic, params )
+			local def = self._session:publish( topic, params )
+			def:addCallbacks( success_f, error_f )
+			return def
 		end,
 
 		catch{
@@ -353,19 +464,66 @@ function Wamp:publish( topic, params )
 						reason="WAMP Internal Error ({})"
 					}
 				end
+				error_f(e)
 			end
 		}
 	}
 
 end
 
+
+function Wamp:_createPubSubKey( topic, handler )
+	return topic .. '::' .. tostring( handler )
+end
+
 -- subscribe()
 -- @param topic string of "channel" to subscribe to
 -- @param handler function callback
 --
-function Wamp:subscribe( topic, handler )
-	-- print( "Wamp:subscribe", topic )
-	return self._session:subscribe( topic, handler )
+function Wamp:subscribe( topic, handler, params )
+	-- print( "Wamp:subscribe", topic, handler )
+	params = params or {}
+	params.options = params.options or {}
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
+	--==--
+
+	local def, decorate_f, success_f, error_f
+
+	decorate_f = function( evt )
+		evt.is_error=false
+		evt.name=Wamp.EVENT
+		evt.type=Wamp.ONPUBLISH
+		handler( evt )
+	end
+
+	success_f = function( sub )
+		local key = self:_createPubSubKey( topic, handler )
+		self._subscriptions[key] = sub
+
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONSUBSCRIBED,
+			subscription=sub
+		}
+		handler( evt )
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONSUBSCRIBED,
+			error=err
+		}
+		handler( evt )
+	end
+
+	def = self._session:subscribe( topic, decorate_f, params )
+	def:addCallbacks( success_f, error_f )
+
+	return def
 end
 
 -- unsubscribe()
@@ -373,8 +531,42 @@ end
 -- @param handler function callback, same as in subscribe()
 --
 function Wamp:unsubscribe( topic, handler )
-	-- print( "Wamp:unsubscribe", topic )
-	return self._session:unsubscribe( topic, handler )
+	-- print( "Wamp:unsubscribe", topic, handler )
+	assert( type(topic)=='string', "Wamp:call :: incorrect type for topic" )
+	assert( type(handler)=='function', "Wamp:call :: incorrect type for handler" )
+	--==--
+
+	local key = self:_createPubSubKey( topic, handler )
+	local subscription = self._subscriptions[key]
+
+	assert( subscription, "handler not found for topic" )
+
+	local def, success_f, error_f
+
+	success_f = function( sub )
+		self._subscriptions[key] = nil
+		local evt = {
+			is_error=false,
+			name=Wamp.EVENT,
+			type=Wamp.ONUNSUBSCRIBED,
+		}
+		handler( evt )
+	end
+
+	error_f = function( err )
+		local evt = {
+			is_error=true,
+			name=Wamp.EVENT,
+			type=Wamp.ONUNSUBSCRIBED,
+			error=err
+		}
+		handler( evt )
+	end
+
+	def = subscription:unsubscribe()
+	def:addCallbacks( success_f, error_f )
+
+	return def
 end
 
 
@@ -405,8 +597,10 @@ function Wamp:close( reason, message )
 end
 
 
+
 --====================================================================--
 --== Private Methods
+
 
 function Wamp:_wamp_close( reason, message )
 	-- print( "Wamp:_wamp_close" )
@@ -512,8 +706,10 @@ function Wamp:_onClose( params )
 end
 
 
+
 --====================================================================--
 --== Event Handlers
+
 
 function Wamp:_wampSessionEvent_handler( event )
 	-- print( "Wamp:_wampSessionEvent_handler: ", event.type )

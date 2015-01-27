@@ -53,8 +53,8 @@ local VERSION = "1.0.0"
 --== Imports
 
 
-local Objects = require 'dmc_objects'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
 
 
@@ -64,7 +64,6 @@ local Utils = require 'dmc_utils'
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
 
 
 
@@ -73,12 +72,12 @@ local ObjectBase = Objects.ObjectBase
 --====================================================================--
 
 
-local ComponentConfig = newClass( ObjectBase, {name="Component Configuration"} )
+local ComponentConfig = newClass( nil, {name="Component Configuration"} )
 
-function ComponentConfig:__init__( params )
-	-- print( "ComponentConfig:__init__" )
+function ComponentConfig:__new__( params )
+	-- print( "ComponentConfig:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.realm = params.realm
 	self.extra = params.extra
@@ -87,7 +86,6 @@ function ComponentConfig:__init__( params )
 	self.authmethods = params.authmethods
 
 	self.onchallenge = params.onchallenge
-
 end
 
 
@@ -105,7 +103,7 @@ end
 --====================================================================--
 
 
-local HelloReturn = newClass( ObjectBase, {name="Hello Return Base"} )
+local HelloReturn = newClass( nil, {name="Hello Return Base"} )
 
 
 
@@ -114,22 +112,20 @@ local HelloReturn = newClass( ObjectBase, {name="Hello Return Base"} )
 --====================================================================--
 
 
-local Accept = newClass( ObjectBase, {name="Accept"} )
+local Accept = newClass( HelloReturn, {name="Accept"} )
 
-function Accept:__init__( params )
-	-- print( "Accept:__init__" )
+function Accept:__new__( params )
+	-- print( "Accept:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.authid == nil or type( params.authid ) == 'string' )
 	assert( params.authrole == nil or type( params.authrole ) == 'string' )
 	assert( params.authmethod == nil or type( params.authmethod ) == 'string' )
-	assert( params.authprovider == nil or type( params.authprovider ) == 'string' )
 
 	self.authid = params.authid
 	self.authrole = params.authrole
 	self.authmethod = params.authmethod
-	self.authprovider = params.authprovider
 end
 
 
@@ -141,11 +137,11 @@ end
 
 local Deny = newClass( HelloReturn, {name="Deny"} )
 
-function Deny:__init__( params )
-	-- print( "Deny:__init__" )
+function Deny:__new__( params )
+	-- print( "Deny:__new__" )
 	params = params or {}
 	params.reason = params.reason or "wamp.error.not_authorized"
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( type( params.reason ) == 'string' )
 	assert( params.message==nil or type( params.message )=='string' )
@@ -164,11 +160,11 @@ end
 local Challenge = newClass( HelloReturn, {name="Challenge"} )
 
 
-function Challenge:__init__( params )
-	-- print( "Challenge:__init__" )
+function Challenge:__new__( params )
+	-- print( "Challenge:__new__" )
 	params = params or {}
 	params.extra = params.extra or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.method = params.method
 	self.extra = params.extra
@@ -183,15 +179,13 @@ end
 
 local HelloDetails = newClass( HelloReturn, {name="Hello Details"} )
 
-function HelloDetails:__init__( params )
-	-- print( "HelloDetails:__init__" )
+function HelloDetails:__new__( params )
+	-- print( "HelloDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.roles = params.roles
 	self.authmethods = params.authmethods
-	self.authid = params.authid
-	self.pending_session = params.pending_session
 end
 
 
@@ -203,17 +197,16 @@ end
 
 local SessionDetails = newClass( HelloReturn, {name="Session Details"} )
 
-function SessionDetails:__init__( params )
-	-- print( "SessionDetails:__init__" )
+function SessionDetails:__new__( params )
+	-- print( "SessionDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.realm = params.realm
 	self.session = params.session -- id
 	self.authid = params.authid
 	self.authrole = params.authrole
 	self.authmethod = params.authmethod
-	self.authprovider = params.authprovider
 end
 
 
@@ -223,12 +216,12 @@ end
 --====================================================================--
 
 
-local CloseDetails = newClass( ObjectBase, {name="Close Details"} )
+local CloseDetails = newClass( nil, {name="Close Details"} )
 
-function CloseDetails:__init__( params )
-	-- print( "CloseDetails:__init__" )
+function CloseDetails:__new__( params )
+	-- print( "CloseDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.reason = params.reason
 	self.message = params.message
@@ -241,21 +234,76 @@ end
 --====================================================================--
 
 
-local SubscribeOptions = newClass( ObjectBase, {name="Subscribe Options"} )
+--[[
+Used to provide options for subscribing in
+:func:`autobahn.wamp.interfaces.ISubscriber.subscribe`.
+--]]
 
-function SubscribeOptions:__init__( params )
-	-- print( "SubscribeOptions:__init__" )
+local SubscribeOptions = newClass( nil, {name="Subscribe Options"} )
+
+function SubscribeOptions:__new__( params )
+	-- print( "SubscribeOptions:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.match==nil or ( type( params.match ) == 'string' and Utils.propertyIn( { 'exact', 'prefix', 'wildcard' }, params.match ) ) )
 	assert( params.details_arg == nil or type( params.details_arg ) == 'string' )
 
-	self.match = params.match
 	self.details_arg = params.details_arg
+	self.options = {match=params.match}
+end
 
-	-- options dict as sent within WAMP message
-	self.options = {match=match}
+
+
+--====================================================================--
+--== Event Details Class
+--====================================================================--
+
+
+--[[
+Provides details on an event when calling an event handler
+previously registered
+--]]
+
+local EventDetails = newClass( nil, {name="Event Details"} )
+
+function EventDetails:__new__( params )
+	-- print( "EventDetails:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	self.publication = params.publication
+	self.publisher = params.publisher
+end
+
+
+
+--====================================================================--
+--== Publish Options Class
+--====================================================================--
+
+
+local PublishOptions = newClass( nil, {name="Publish Options"} )
+
+function PublishOptions:__new__( params )
+	-- print( "PublishOptions:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	assert( params.acknowledge==nil or type( params.acknowledge )=='boolean' )
+	assert( params.excludeMe==nil or type( params.excludeMe )=='boolean' )
+	-- TODO: make sure all numbers
+	assert( params.exclude==nil or ( type( params.exclude )=='table' ) )
+	assert( params.eligible==nil or ( type( params.eligible )=='table' ) )
+	assert( params.discloseMe == nil or type( params.discloseMe )=='string' )
+
+	self.options = {
+		acknowledge=params.acknowledge,
+		excludeMe=params.excludeMe,
+		exclude=params.exclude,
+		eligible=params.eligible,
+		discloseMe=params.discloseMe
+	}
 end
 
 
@@ -265,12 +313,12 @@ end
 --====================================================================--
 
 
-local RegisterOptions = newClass( ObjectBase, {name="Register Options"} )
+local RegisterOptions = newClass( nil, {name="Register Options"} )
 
-function RegisterOptions:__init__( params )
-	-- print( "RegisterOptions:__init__" )
+function RegisterOptions:__new__( params )
+	-- print( "RegisterOptions:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.details_arg = params.details_arg
 	self.options = {
@@ -286,12 +334,12 @@ end
 --====================================================================--
 
 
-local CallDetails = newClass( ObjectBase, {name="Call Details"} )
+local CallDetails = newClass( nil, {name="Call Details"} )
 
-function CallDetails:__init__( params )
-	-- print( "CallDetails:__init__" )
+function CallDetails:__new__( params )
+	-- print( "CallDetails:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	self.progress = params.progress
 	self.caller = params.caller
@@ -302,6 +350,57 @@ end
 
 
 
+--====================================================================--
+--== Call Options Class
+--====================================================================--
+
+
+local CallOptions = newClass( nil, {name="Call Options"} )
+
+function CallOptions:__new__( params )
+	-- print( "CallOptions:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	assert( params.onProgress==nil or type( params.onProgress )=='function' )
+	assert( params.timeout==nil or ( type( params.timeout )=='number' and params.timeout>0 ) )
+	assert( params.discloseMe==nil or type( params.discloseMe )=='boolean' )
+	assert( params.runOn==nil or ( type( params.runOn )=='string' and Utils.propertyIn({'all', 'any', 'partition'}, params.runOn)) )
+
+	self.options = {
+		timeout=params.timeout,
+		discloseMe=params.discloseMe
+	}
+	self.onProgress = params.onProgress
+	if params.onProgress then
+		self.options.receive_progress = true
+	end
+
+end
+
+
+
+--====================================================================--
+--== Call Results Class
+--====================================================================--
+
+
+local CallResult = newClass( nil, {name="Call Result"} )
+
+function CallResult:__new__( params )
+	-- print( "CallResult:__new__" )
+	params = params or {}
+	self:superCall( '__new__', params )
+	--==--
+	self.results = params.results
+	self.kwresults = params.kwresults
+end
+
+-- function CallResult:__tostring__()
+-- 	return "Call Result"
+-- end
+
+
 
 --====================================================================--
 --== Types Facade
@@ -310,14 +409,18 @@ end
 
 return {
 	ComponentConfig=ComponentConfig,
-	-- Router Options,
+	-- Router Options -- not implemented,
 	Accept=Accept,
 	Deny=Deny,
 	Challenge=Challenge,
 	HelloDetails=HelloDetails,
 	SessionDetails=SessionDetails,
+	CloseDetails=CloseDetails,
 	SubscribeOptions=SubscribeOptions,
+	EventDetails=EventDetails,
+	PublishOptions=PublishOptions,
 	RegisterOptions=RegisterOptions,
 	CallDetails=CallDetails,
-	CloseDetails=CloseDetails,
+	CallOptions=CallOptions,
+	CallResult=CallResult
 }

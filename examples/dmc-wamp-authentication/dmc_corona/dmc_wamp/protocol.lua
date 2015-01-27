@@ -54,11 +54,12 @@ local VERSION = "1.0.0"
 
 local json = require 'json'
 
-local Objects = require 'dmc_objects'
+local Objects = require 'lib.dmc_lua.lua_objects'
 local Patch = require 'lib.dmc_lua.lua_patch'
-local Utils = require 'dmc_utils'
+local LuaEventsMixin = require 'lib.dmc_lua.lua_events_mix'
+local Utils = require 'lib.dmc_lua.lua_utils'
 
-local WErrors = require 'dmc_wamp.exception'
+local WError = require 'dmc_wamp.exception'
 local WFutureMixin = require 'dmc_wamp.future_mix'
 local WMessageFactory = require 'dmc_wamp.message'
 local WRole = require 'dmc_wamp.role'
@@ -73,11 +74,12 @@ local WUtils = require 'dmc_wamp.utils'
 
 Patch.addPatch( 'table-pop' )
 
-local ProtocolError = WErrors.ProtocolErrorFactory
+local EventsMix = LuaEventsMixin.EventsMix
+local FutureMix = WFutureMixin.FutureMix
 
 -- setup some aliases to make code cleaner
 local newClass = Objects.newClass
-local ObjectBase = Objects.ObjectBase
+local Class = Objects.Class
 
 local tpop = table.pop
 
@@ -91,11 +93,11 @@ local tpop = table.pop
 --[[
 --]]
 
-local Endpoint = newClass( ObjectBase )
+local Endpoint = newClass( nil, {name="Endpoint"} )
 
-function Endpoint:__init__( params )
+function Endpoint:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.obj )
 	assert( params.fn )
@@ -117,13 +119,12 @@ end
 --[[
 --]]
 
-local Handler = newClass( ObjectBase )
+local Handler = newClass( nil, {name="Handler"} )
 
-function Handler:__init__( params )
+function Handler:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
-	assert( params.obj )
 	assert( params.fn )
 	assert( params.topic )
 
@@ -131,6 +132,11 @@ function Handler:__init__( params )
 	self.fn = params.fn
 	self.topic = params.topic
 	self.details_arg = params.details_arg
+
+	-- this addition is for more Corona-ism
+	-- used in added unsubscribe() method to Session
+	self.subscription = params.subscription
+
 end
 
 
@@ -145,11 +151,11 @@ Object representing a publication.
 This class implements :class:`autobahn.wamp.interfaces.IPublication`.
 --]]
 
-local Publication = newClass( ObjectBase )
+local Publication = newClass( nil, {name="Publication"} )
 
-function Publication:__init__( params )
+function Publication:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.publication_id )
 
@@ -168,23 +174,18 @@ Object representing a subscription.
 This class implements :class:`autobahn.wamp.interfaces.ISubscription`.
 --]]
 
-local Subscription = newClass( ObjectBase )
+local Subscription = newClass( nil, {name="Subscription"} )
 
-function Subscription:__init__( params )
+function Subscription:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.subscription_id )
-	assert( params.topic )
 
 	self._session = params.session
 	self.id = params.subscription_id
 	self.active = true
-
-	-- this is a shortcut i put in the code
-	-- autobahn handles it another way
-	self.handler = params.handler
 end
 
 -- Implements :func:`autobahn.wamp.interfaces.ISubscription.unsubscribe`
@@ -206,11 +207,11 @@ Object representing a registration.
 This class implements :class:`autobahn.wamp.interfaces.IRegistration`.
 --]]
 
-local Registration = newClass( ObjectBase )
+local Registration = newClass( nil, {name="Registration"} )
 
-function Registration:__init__( params )
+function Registration:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	self:superCall( '__new__', params )
 	--==--
 	assert( params.session )
 	assert( params.registration_id )
@@ -246,11 +247,12 @@ This class implements:
 :class:`autobahn.wamp.interfaces.ISession`
 --]]
 
-local BaseSession = newClass( ObjectBase )
+local BaseSession = newClass( { Class, EventsMix }, {name="Base Session"} )
 
-function BaseSession:__init__( params )
+function BaseSession:__new__( params )
 	params = params or {}
-	self:superCall( '__init__', params )
+	Class.__new__( self, params )
+	EventsMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--
@@ -354,9 +356,7 @@ This class implements:
 ?? * :class:`autobahn.wamp.interfaces.ITransportHandler`
 --]]
 
-local Session = newClass( BaseSession, { name="WAMP Session" } )
-
-WFutureMixin.mixin( Session )
+local Session = newClass( { BaseSession, FutureMix }, { name="WAMP Session" } )
 
 --== Event Constants ==--
 
@@ -369,10 +369,11 @@ Session.ONCHALLENGE = 'on_challenge_wamp_event'
 --======================================================--
 -- Start: Setup DMC Objects
 
-function Session:__init__( params )
-	-- print( "Session:__init__" )
+function Session:__new__( params )
+	-- print( "Session:__new__" )
 	params = params or {}
-	self:superCall( '__init__', params )
+	BaseSession.__new__( self, params )
+	FutureMix.__init__( self, params )
 	--==--
 
 	--== Create Properties ==--
@@ -493,7 +494,7 @@ end
 -- Implements :func:`autobahn.wamp.interfaces.ITransportHandler.onMessage`
 --
 function Session:onMessage( msg )
-	-- print( "Session:onMessage", self )
+	-- print( "Session:onMessage", msg )
 
 	if self._session_id == nil then
 
@@ -532,7 +533,7 @@ function Session:onMessage( msg )
 			local onChallenge_f = self.config.onchallenge
 
 			if type( onChallenge_f ) ~= 'function' then
-				error( ProtocolError( "Received %s incorrect onChallenge" % 'fdsf' ) )
+				error( WError.ProtocolError( "Received %s incorrect onChallenge" % 'fdsf' ) )
 			end
 
 			challenge = WTypes.Challenge{
@@ -557,7 +558,7 @@ function Session:onMessage( msg )
 
 
 		else
-			error( ProtocolError( "Received %s message, and session is not yet established" % msg.NAME ) )
+			error( WError.ProtocolError( "Received %s message, and session is not yet established" % msg.NAME ) )
 		end
 
 		return
@@ -582,20 +583,24 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Event ) then
 
 		if not self._subscriptions[ msg.subscription ] then
-			error( ProtocolError( "EVENT received for non-subscribed subscription ID {" ) )
+			error( WError.ProtocolError( "EVENT received for non-subscribed subscription ID" ) )
 		end
 
-		local sub = self._subscriptions[ msg.subscription ]
-		local p, handler
+		local handler = self._subscriptions[ msg.subscription ]
 
 		-- TODO: event details
 
-		p = {
+		local evt = {
 			args=msg.args,
 			kwargs=msg.kwargs
 		}
-		handler = sub.handler
-		if handler.fn then handler.fn( p ) end
+		if handler.obj then
+			handler.fn( handler.obj, evt )
+		else
+			handler.fn( evt )
+		end
+
+		-- TODO: exception handling
 
 
 	--== Published Message
@@ -603,13 +608,15 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Published ) then
 
 		if not self._publish_reqs[ msg.request ] then
-			error( ProtocolError( "PUBLISHED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "PUBLISHED received for non-pending request ID" ) )
+			return
 		end
 
 		local pub_req = tpop( self._publish_reqs, msg.request )
 		local def, opts = unpack( pub_req )
+		local pub = Publication:new{ publication=msg.publication }
 
-		self:_resolve_future( def, Publication:new({ publication_id=msg.publication }) )
+		self:_resolve_future( def, pub )
 
 
 	--== Subscribed Message
@@ -618,35 +625,45 @@ function Session:onMessage( msg )
 		-- print("onMessage:Subscribed")
 
 		if not self._subscribe_reqs[ msg.request ] then
-			error( ProtocolError( "SUBSCRIBED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "SUBSCRIBED received for non-pending request ID" ) )
+			return
 		end
 
 		local sub_req = tpop( self._subscribe_reqs, msg.request )
-		local func, topic = unpack( sub_req )
+		local def, obj, func, topic, options = unpack( sub_req )
 
-		local handler = Handler:new{
+		local sub = Subscription:new{
+			session=self,
+			subscription_id=msg.subscription
+		}
+
+		self._subscriptions[ msg.subscription ] = Handler:new{
+			obj=obj,
 			fn=func,
 			topic=topic,
-			details_arg=nil
+			details_arg=options.details_arg,
+			subscription=sub
 		}
 
-		self._subscriptions[ msg.subscription ] = Subscription:new{
-			session=self,
-			id=msg.subscription,
-			handler=handler
-		}
-
-		-- TODO: send subscribed notice
-		-- p = {
-		-- 	args=msg.args,
-		-- 	kwargs=msg.kwargs
-		-- }
-		-- if sub_req.eventHandler then sub_req.eventHandler( p ) end
+		self:_resolve_future( def, sub )
 
 
 	--== Unsubscribed Message
 
 	elseif msg:isa( WMessageFactory.Unsubscribed ) then
+
+		if not self._unsubscribe_reqs[ msg.request ] then
+			error( WError.ProtocolError( "UNSUBSCRIBED received for non-pending request ID" ) )
+			return
+		end
+
+		local unsub_req = tpop( self._unsubscribe_reqs, msg.request )
+		local def, sub = unpack( unsub_req )
+
+		self._subscriptions[sub.id] = nil
+		sub.active = false
+
+		self:_resolve_future( def )
 
 
 	--== Result Message
@@ -654,30 +671,35 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Result ) then
 
 		if not self._call_reqs[ msg.request ] then
-			error( ProtocolError( "RESULT received for non-pending request ID" ) )
+			error( WError.ProtocolError( "RESULT received for non-pending request ID" ) )
+			return
 		end
 
-		local call_req
-
-		-- TODO: progressive result, etc
-
+		-- Progress
+		--
 		if msg.progress then
-			-- Progressive result
-			call_req = self._call_reqs[ msg.request ]
+			local _, opts = self._call_reqs[ msg.request ]
+			if opts.onProgress then
+				opts.onProgress( msg.args, msg.kwargs )
+			end
 
+		-- Result
+		--
 		else
-			-- Final result
-			call_req = tpop( self._call_reqs, msg.request )
+			local call_req = tpop( self._call_reqs, msg.request )
+			local def, opts = unpack( call_req )
 
-			if #msg.args == 1 and not msg.kwargs then
-				p = { data=msg.args[1] }
+			if not msg.args and not msg.kwargs then
+				self:_resolve_future( def, nil )
 			else
-				p = {
+				local res = WTypes.CallResult:new{
 					results=msg.args,
 					kwresults=msg.kwargs
 				}
+
+				self:_resolve_future( def, res )
 			end
-			if call_req.onResult then call_req.onResult( p ) end
+
 		end
 
 
@@ -686,11 +708,13 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Invocation ) then
 
 		if self._invocations[ msg.request ] then
-			error( ProtocolError( "Invocation: already received request for this id" ) )
+			error( WError.ProtocolError( "Invocation: already received request for this id" ) )
+			return
 		end
 
 		if not self._registrations[ msg.registration ] then
-			error( ProtocolError( "Invocation: don't have this registration ID" ) )
+			error( WError.ProtocolError( "Invocation: don't have this registration ID" ) )
+			return
 		end
 
 		local registration = self._registrations[ msg.registration ]
@@ -749,7 +773,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Registered ) then
 
 		if not self._register_reqs[ msg.request ] then
-			error( ProtocolError( "REGISTERED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "REGISTERED received for non-pending request ID" ) )
 		end
 
 		local reg_req = tpop( self._register_reqs, msg.request )
@@ -775,7 +799,7 @@ function Session:onMessage( msg )
 	elseif msg:isa( WMessageFactory.Unregistered ) then
 
 		if not self._unregister_reqs[ msg.request ] then
-			error( ProtocolError( "UNREGISTERED received for non-pending request ID" ) )
+			error( WError.ProtocolError( "UNREGISTERED received for non-pending request ID" ) )
 		end
 
 		local unreg_req = tpop( self._unregister_reqs, msg.request )
@@ -884,69 +908,90 @@ function Session:publish( topic, params )
 	assert( topic )
 
 	if not self._transport then
-		error( TransportError() )
+		error( WError.TransportError() )
 	end
 
-	local options = params.options or {}
+	local opts = params.options or {}
 	local request = WUtils.id()
-	local msg = WMessageFactory.Publish:new{
+	local msg, p
+	p = {
 		request=request,
 		topic=topic,
-		options=options,
 		args=params.args,
 		kwargs=params.kwargs
 	}
+	-- layer in Publish message options
+	if opts.options then
+		p = Utils.extend( opts.options, p )
+	end
 
-	if options.acknowledge == true then
+	msg = WMessageFactory.Publish:new( p )
+
+	if opts.acknowledge == true then
 		local def = self:_create_future()
-		if params.onSuccess or params.onError then
-			def:addCallbacks( params.onSuccess, params.onError )
-		end
-		self._publish_reqs[ request ] = { def, options }
+		self._publish_reqs[ request ] = { def, opts }
 		self._transport:send( msg )
+		return def
 	else
 		self._transport:send( msg )
 		return
-
 	end
+
 end
 
 
 -- Implements :func:`autobahn.wamp.interfaces.ISubscriber.subscribe`
 --
-function Session:subscribe( topic, callback )
-	-- print( "Session:subscribe", topic )
-
+function Session:subscribe( topic, handler, params )
+	-- print( "Session:subscribe", topic, handler, params )
+	params = params or {}
+	--==--
 	assert( topic )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	-- TODO: register on object
 	-- TODO: change onEvent, onSubscribe ? add params to array
 
-	local request, msg
+	local function _subscribe(obj, handler, topic, prms)
+		local request, def, msg
 
-	request = WUtils.id()
-	self._subscribe_reqs[ request ] = { callback, topic }
+		request = WUtils.id()
+		def = self:_create_future()
+		self._subscribe_reqs[ request ] = { def, obj, handler, topic, prms }
 
-	msg = WMessageFactory.Subscribe:new{
-		request = request,
-		topic = topic,
-	}
-	self._transport:send( msg )
+		msg = WMessageFactory.Subscribe:new{
+			request=request,
+			topic=topic,
+			options=prms.options
+		}
+		self._transport:send( msg )
+
+		return def
+	end
+
+	if type(handler)=='function' then
+		return _subscribe( nil, handler, topic, params )
+	else
+		error( "to be implemented" )
+	end
+
 
 end
 
 
+--[[
+This is an addition specifically for Corona SDK
+it's more of a Corona-ism
+--]]
 function Session:unsubscribe( topic, callback )
 	-- print( "Session:unsubscribe", topic, callback )
 
-	for i, sub in pairs( self._subscriptions ) do
-		local handler = sub.handler
+	for _, handler in pairs( self._subscriptions ) do
 		if handler.topic == topic and handler.fn == callback then
-			sub:unsubscribe()
+			handler.subscription:unsubscribe()
 			break
 		end
 	end
@@ -958,19 +1003,29 @@ end
 --
 function Session:_unsubscribe( subscription )
 	-- print( "Session:_unsubscribe", subscription )
+	--==--
+	assert( subscription:isa( Subscription ) )
+	assert( subscription.active )
+	assert( self._subscriptions[subscription.id]~=nil )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
-	local request, msg
+	local def, request, msg
 
 	request = WUtils.id()
+	def = self:_create_future()
+
+	self._unsubscribe_reqs[request] = { def, subscription }
+
 	msg = WMessageFactory.Unsubscribe:new{
 		request=request,
-		subscription_id = subscription.id
+		subscription=subscription.id
 	}
 	self._transport:send( msg )
+
+	return def
 
 end
 
@@ -978,29 +1033,38 @@ end
 function Session:call( procedure, params )
 	-- print( "Session:call", procedure )
 	params = params or {}
-	params.args = params.args or {}
-	params.kwargs =  params.kwargs or {}
 	--==--
 
+	assert( type(procedure)=='string' )
+
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
-	local request, msg
+	local opts = params.options or {}
+	local def, request, msg, p
 
+	def = self:_create_future()
 	request = WUtils.id()
 
-	self._call_reqs[ request ] = params
-
-	msg = WMessageFactory.Call:new{
+	p = {
 		request = request,
 		procedure = procedure,
 		args = params.args,
 		kwargs = params.kwargs,
-		--
 	}
+	-- layer in Call message options
+	if opts.options then
+		p = Utils.extend( opts.options, p )
+	end
+
+	msg = WMessageFactory.Call:new( p )
+
+	self._call_reqs[ request ] = { def, opts }
+
 	self._transport:send( msg )
 
+	return def
 end
 
 
@@ -1013,7 +1077,7 @@ function Session:register( endpoint, params )
 	--==--
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local function _register( obj, endpoint, procedure, options )
@@ -1074,7 +1138,7 @@ function Session:_unregister( registration )
 	assert( self._registrations[ registration.id ] )
 
 	if not self._transport then
-		error( TransportLostError() )
+		error( WError.TransportLostError() )
 	end
 
 	local request, def, msg
