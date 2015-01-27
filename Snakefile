@@ -23,6 +23,7 @@ module_config = {
 			"dmc_wamp/utils.lua"
 		],
 		"requires": [
+			"dmc-corona-boot",
 			"DMC-Lua-Library",
 			"dmc-websockets",
 			"dmc-objects",
