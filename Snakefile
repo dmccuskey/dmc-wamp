@@ -31,26 +31,26 @@ module_config = {
 		]
 	},
 	"examples": {
-		"dir": "examples",
+		"base_dir": "examples",
 		"apps": [
 			{
-				"dir": "dmc-wamp-authentication",
+				"exp_dir": "dmc-wamp-authentication",
 				"requires": []
 			},
 			{
-				"dir": "dmc-wamp-publish",
+				"exp_dir": "dmc-wamp-publish",
 				"requires": []
 			},
 			{
-				"dir": "dmc-wamp-rpc-callee",
+				"exp_dir": "dmc-wamp-rpc-callee",
 				"requires": []
 			},
 			{
-				"dir": "dmc-wamp-rpc-caller",
+				"exp_dir": "dmc-wamp-rpc-caller",
 				"requires": []
 			},
 			{
-				"dir": "dmc-wamp-subscribe",
+				"exp_dir": "dmc-wamp-subscribe",
 				"requires": []
 			}
 		]
