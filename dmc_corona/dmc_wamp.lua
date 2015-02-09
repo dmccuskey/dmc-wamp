@@ -261,6 +261,27 @@ end
 --== Public Methods
 
 
+-- user_id, setter, string
+--
+function Wamp.__setters:user_id( value )
+	-- print( "Wamp.__setters:user_id", value )
+	assert( type(value)=='string' )
+	--==--
+	self._config.authid = value
+end
+
+-- auth_methods, setter, table of auth strings
+--
+function Wamp.__setters:auth_methods( value )
+	-- print( "Wamp.__setters:auth_methods", value )
+	assert( type(value)=='table' )
+	--==--
+	self._config.authmethods = value
+end
+
+
+
+
 -- is_connected, getter, boolean
 --
 function Wamp.__getters:is_connected()
