@@ -168,6 +168,11 @@ local Wamp = newClass( { WebSocket, StatesMix }, { name="WAMP Connector" } )
 
 Wamp.DEFAULT_PROTOCOL = { 'wamp.2.json' }
 
+-- Auth Types
+
+Wamp.AUTH_WAMPCRA = 'wampcra'
+Wamp.AUTH_TICKET = 'ticket'
+
 --== Event Constants ==--
 
 Wamp.EVENT = 'wamp_event'
