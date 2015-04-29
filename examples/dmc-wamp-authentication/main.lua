@@ -50,31 +50,45 @@ local doWampRPC = function()
 
 	local procedure = WAMP_RPC_PROCEDURE
 
-	local params = {
-		args = { 2, 10 },
-		-- kwargs = {},
-		-- timeout = 2000,
-		onResult=function( e )
-			print( ">> WAMP RPC::onResult handler" )
-			if e.data then
-				print( '>>  data', e.data )
+	local callEvent_handler = function( event )
+		-- print( ">> WAMP callEvent_handler", event.type )
+		local etype = event.type
+
+		if etype == Wamp.ONRESULT then
+			print( "WAMP: successful RESULT" )
+
+			if event.data then
+				print( '>>  data', event.data )
 			end
-			if e.results then
-				for i,v in ipairs( e.results ) do
+			if event.results then
+				for i,v in ipairs( event.results ) do
 					print( '>>  results', i, v )
 				end
 			end
-			if e.kwresults then
-				for k,v in pairs( e.kwresults ) do
+			if event.kwresults then
+				for k,v in pairs( event.kwresults ) do
 					print( '>>  kwresults', k, v )
 				end
 			end
-		end,
-		onProgress=function(e) end,
-		onError=function(e) end
+
+			-- close connection
+			timer.performWithDelay( 2000, function() wamp:leave() end  )
+
+		elseif etype == Wamp.ONPROGRESS then
+			print( "WAMP: received PROGRESS" )
+
+			-- if event.is_error then
+			-- else
+			-- end
+
+		end
+	end
+
+	local params = {
+		args = { 2, 10 },
 	}
 	if wamp.is_connected then
-		local deferred = wamp:call( procedure, params )
+		local deferred = wamp:call( procedure, callEvent_handler, params )
 	end
 
 	-- close connection
