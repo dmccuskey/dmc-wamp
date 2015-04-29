@@ -95,10 +95,10 @@ local function onChallenge( event )
 	local method = event.method
 	local extra = event.extra
 
-	if method == 'wampcra' then
+	if method == Wamp.AUTH_WAMPCRA then
 		return Auth.compute_wcs( gINFO.user.secret, extra.challenge )
 
-	elseif method == 'ticket' then
+	elseif method == Wamp.AUTH_TICKET then
 		return gINFO.user.ticket
 
 	else

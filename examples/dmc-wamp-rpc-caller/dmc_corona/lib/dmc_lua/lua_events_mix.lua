@@ -50,6 +50,8 @@ local VERSION = "0.2.2"
 local Events
 local Utils = {} -- make copying from Utils easier
 
+local sfmt = string.format
+
 
 
 --====================================================================--
@@ -81,20 +83,21 @@ end
 
 -- return event unmodified
 --
-function _createCoronaEvent( obj, event )
+local function _createCoronaEvent( obj, event )
 	return event
 end
 
 
 
 -- obj,
--- event type
--- data
--- params
+-- event type, string
+-- data, anything
+-- params, table of params
+-- params.merge, boolean, if to merge data (table) in with event table
 --
-function _createDmcEvent( obj, e_type, data, params )
+local function _createDmcEvent( obj, e_type, data, params )
 	params = params or {}
-	if params.merge == nil then params.merge = true end
+	if params.merge==nil then params.merge=false end
 	--==--
 	local e
 
@@ -118,7 +121,7 @@ end
 
 
 
-function _patch( obj )
+local function _patch( obj )
 
 	obj = obj or {}
 
@@ -133,6 +136,8 @@ function _patch( obj )
 
 	obj.setDebug = Events.setDebug
 	obj.setEventFunc = Events.setEventFunc
+
+	obj._dispatchEvent = Events._dispatchEvent
 
 	return obj
 end
@@ -205,17 +210,32 @@ function Events.setEventFunc( self, func )
 end
 
 
+function Events.createEvent( self, ... )
+	return self.__event_func( self, ... )
+end
+
 function Events.dispatchEvent( self, ... )
 	-- print( "Events.dispatchEvent" )
 	local f = self.__event_func
 	self:_dispatchEvent( f( self, ... ) )
 end
 
+function Events.dispatchRawEvent( self, event )
+	-- print( "Events.dispatchRawEvent", event )
+	assert( type(event)=='table', "wrong type for event" )
+	assert( event.name, "event must have property 'name'")
+	--==--
+	self:_dispatchEvent( event )
+end
+
+
 
 -- addEventListener()
 --
 function Events.addEventListener( self, e_name, listener )
-	-- print( "Events.addEventListener", e_name, listener );
+	-- print( "Events.addEventListener", e_name, listener )
+	assert( type(e_name)=='string', sfmt( "Events.addEventListener event name should be a string, received '%s'", tostring(e_name)) )
+	assert( type(listener)=='function' or type(listener)=='table', sfmt( "Events.addEventListener callback should be function or object, received '%s'", tostring(listener) ))
 
 	-- Sanity Check
 

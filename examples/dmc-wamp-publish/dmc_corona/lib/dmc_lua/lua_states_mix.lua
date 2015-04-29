@@ -131,6 +131,7 @@ end
 
 function States.resetStates( self, params )
 	params = params or {}
+	if params.debug_on==nil then params.debug_on=false end
 	--==--
 	if self.__debug_on then
 		print( outStr( "resetStates: resetting object states" ) )
@@ -138,7 +139,7 @@ function States.resetStates( self, params )
 	self.__state_stack = {}
 	self.__curr_state_func = nil
 	self.__curr_state_name = ""
-	self.__debug_on = params.debug_on == nil and false or params.debug_on
+	self.__debug_on = params.debug_on
 end
 
 
@@ -200,6 +201,7 @@ end
 
 
 function States.pushStateStack( self, state_name )
+	assert( self.__state_stack, errStr("no state stack: did you init() ??") )
 	assert( state_name, errStr("no state name given") )
 	tinsert( self.__state_stack, 1, state_name )
 end

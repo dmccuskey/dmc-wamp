@@ -26,8 +26,6 @@ module_config = {
 			"dmc-corona-boot",
 			"DMC-Lua-Library",
 			"dmc-websockets",
-			"dmc-objects",
-			"dmc-utils"
 		]
 	},
 	"examples": {

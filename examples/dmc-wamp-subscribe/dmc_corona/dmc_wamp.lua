@@ -168,6 +168,11 @@ local Wamp = newClass( { WebSocket, StatesMix }, { name="WAMP Connector" } )
 
 Wamp.DEFAULT_PROTOCOL = { 'wamp.2.json' }
 
+-- Auth Types
+
+Wamp.AUTH_WAMPCRA = 'wampcra'
+Wamp.AUTH_TICKET = 'ticket'
+
 --== Event Constants ==--
 
 Wamp.EVENT = 'wamp_event'
@@ -254,6 +259,27 @@ end
 
 --====================================================================--
 --== Public Methods
+
+
+-- user_id, setter, string
+--
+function Wamp.__setters:user_id( value )
+	-- print( "Wamp.__setters:user_id", value )
+	assert( type(value)=='string' )
+	--==--
+	self._config.authid = value
+end
+
+-- auth_methods, setter, table of auth strings
+--
+function Wamp.__setters:auth_methods( value )
+	-- print( "Wamp.__setters:auth_methods", value )
+	assert( type(value)=='table' )
+	--==--
+	self._config.authmethods = value
+end
+
+
 
 
 -- is_connected, getter, boolean
@@ -612,7 +638,7 @@ function Wamp:_wamp_close( reason, message )
 	end
 
 	if had_session then
-		self:dispatchEvent( Wamp.ONDISCONNECT, { reason=reason, message=message } )
+		self:dispatchEvent( Wamp.ONDISCONNECT, { reason=reason, message=message }, {merge=true} )
 	end
 
 end
@@ -724,7 +750,7 @@ function Wamp:_wampSessionEvent_handler( event )
 
 	elseif e_type == session.ONCHALLENGE then
 		assert( event.challenge )
-		self:dispatchEvent( Wamp.ONCHALLENGE, { challenge=event.challenge } )
+		self:dispatchEvent( Wamp.ONCHALLENGE, { challenge=event.challenge }, {merge=true} )
 
 	end
 
