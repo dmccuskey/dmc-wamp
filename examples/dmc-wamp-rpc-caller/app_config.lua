@@ -24,7 +24,8 @@ Config.server = {
 	port = 8080,
 	realm = 'realm1',
 
-	rpc_procedure = 'com.timeservice.now'
+	rpc_procedure = 'com.example.add2',
+	-- rpc_procedure = 'com.timeservice.now'
 }
 
 

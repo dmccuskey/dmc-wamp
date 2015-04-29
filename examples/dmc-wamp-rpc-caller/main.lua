@@ -85,7 +85,7 @@ local doWampRPC = function()
 
 	end
 
-	wamp:call( procedure, callEvent_handler )
+	wamp:call( procedure, callEvent_handler, { args={2,2} } )
 
 end
 
