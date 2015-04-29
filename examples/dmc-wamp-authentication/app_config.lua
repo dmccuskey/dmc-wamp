@@ -49,8 +49,8 @@ Config.server = {
 	port = 8080,
 	realm = 'realm1',
 
-	-- authmethods={ 'wampcra' },
-	authmethods={ 'ticket', 'wampcra' },
+	authmethods={ 'wampcra' },
+	-- authmethods={ 'ticket', 'wampcra' },
 
 	remote_procedure = 'com.example.add2'
 }
