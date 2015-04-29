@@ -389,6 +389,7 @@ function Wamp:register( handler, params )
 	if params.pkeys or params.disclose_caller then
 		params.options = Types.RegisterOptions:new( params )
 	end
+	-- @TODO: check session
 	return self._session:register( handler, params )
 end
 
@@ -546,6 +547,8 @@ function Wamp:subscribe( topic, handler, params )
 		handler( evt )
 	end
 
+	-- @TOD: check session
+
 	def = self._session:subscribe( topic, decorate_f, params )
 	def:addCallbacks( success_f, error_f )
 
@@ -609,11 +612,16 @@ end
 
 function Wamp:leave( reason, message )
 	-- print( "Wamp:leave" )
-	local p = {
-		reason=reason,
-		log_message=message
-	}
-	self._session:leave( p )
+	-- @TODO: check session, try
+	local session = self._session
+	if not session then
+		pnotice( "Wamp:leave no active session" )
+	else
+		session:leave{
+			reason=reason,
+			log_message=message
+		}
+	end
 end
 
 function Wamp:close( reason, message )
@@ -630,10 +638,12 @@ end
 
 function Wamp:_wamp_close( reason, message )
 	-- print( "Wamp:_wamp_close" )
-	local had_session = ( self._session ~= nil )
+	local session = self._session
+	local had_session = ( session~=nil )
 
-	if self._session then
-		self._session:onClose( message, was_clean )
+	-- @TODO: check with no session
+	if session then
+		session:onClose( message, was_clean )
 		self._session = nil
 	end
 
