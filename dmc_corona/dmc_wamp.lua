@@ -131,9 +131,10 @@ local dmc_wamp_data = Utils.extend( dmc_lib_data.dmc_wamp, DMC_WAMP_DEFAULTS )
 --== Imports
 
 
-local Objects = require 'dmc_objects'
-local LuaStatesMixin = require 'lib.dmc_lua.lua_states_mix'
-local Utils = require 'dmc_utils'
+local Objects = require 'lib.dmc_lua.lua_objects'
+local Patch = require 'lib.dmc_lua.lua_patch'
+local StatesMixin = require 'lib.dmc_lua.lua_states_mix'
+local Utils = require 'lib.dmc_lua.lua_utils'
 local WebSocket = require 'dmc_websockets'
 
 local WError = require 'dmc_wamp.exception'
@@ -147,10 +148,9 @@ local WTypes = require 'dmc_wamp.types'
 --== Setup, Constants
 
 
-local StatesMix = LuaStatesMixin.StatesMix
+Patch.addPatch( 'print-output' )
 
--- setup some aliases to make code cleaner
-local newClass = Objects.newClass
+local StatesMix = StatesMixin.StatesMix
 
 -- local control of development functionality
 local LOCAL_DEBUG = dmc_wamp_data.debug_active~=nil and dmc_wamp_data.debug_active or false
