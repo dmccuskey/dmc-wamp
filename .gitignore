@@ -1,3 +1,9 @@
 *.sublime-project
 *.sublime-workspace
 .snakemake
+
+# written by the Crossbar router at runtime
+examples/router/.crossbar/key.*
+examples/router/.crossbar/node.pid
+examples/router/.cache
+examples/router/__pycache__

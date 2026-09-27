@@ -91,9 +91,6 @@ local doWampRPC = function()
 		local deferred = wamp:call( procedure, callEvent_handler, params )
 	end
 
-	-- close connection
-	timer.performWithDelay( 4000, function(e) wamp:leave() end  )
-
 end
 
 
@@ -104,9 +101,9 @@ end
 
 
 local function onChallenge( event )
-	print( ">> WAMP onChallenge: ", method )
 	local session = event.session
 	local method = event.method
+	print( ">> WAMP onChallenge: ", method )
 	local extra = event.extra
 
 	if method == Wamp.AUTH_WAMPCRA then

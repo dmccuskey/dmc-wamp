@@ -67,7 +67,7 @@ doWampPublish = function()
 
 	count = count + 1
 	local params = {
-		args={ "message-" .. tostring(i), },
+		args={ "message-" .. tostring(count), },
 		-- kwargs={},
 		callback=publish_handler
 	}

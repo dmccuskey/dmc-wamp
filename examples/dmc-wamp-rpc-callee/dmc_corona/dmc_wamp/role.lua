@@ -3,7 +3,7 @@
 --
 --
 -- by David McCuskey
--- Documentation: http://docs.davidmccuskey.com/display/docs/dmc_wamp.lua
+-- Documentation: https://github.com/dmccuskey/dmc-wamp
 --====================================================================--
 
 --[[

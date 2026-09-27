@@ -1,36 +1,9 @@
-You can run this example by installing crossbar (http://crossbar.io/)
+# dmc-wamp-authentication
 
+Joins a realm that requires a login, answers the router's challenge (WAMP-CRA) or sends a ticket, and calls `com.example.add2`.
 
-## Install Crossbar ##
+1. Start the router in [`../router/`](../router/README.md); its `/auth` path requires a login.
+2. In `app_config.lua`, choose the user (`Config.user = user_1` for `joe`, `user_2` for `peter`, whose key is salted) and the method (`authmethods`: `{ 'wampcra' }` or `{ 'ticket' }`). To use a router on another computer, change `host`.
+3. Open `main.lua` in the Solar2D Simulator. WAMP-CRA uses Solar2D's `crypto` library, so the example doesn't run outside Solar2D.
 
-* If you have `pip` on your computer (easier)
-
-  https://github.com/crossbario/crossbar/wiki/Quick-Start
-
-* Download the examples
-
-  https://github.com/crossbario/crossbarexamples
-
-  download the github examples on your computer (clone or zip).
-
-  cd into `<location-of-examples>/authenticate/wampcra/`.
-
-  _Note: you will start/stop `crossbar` in this directory._
-
-* Update the crossbar config
-
-  Located in this example, copy `crossbar-io/config.json` into the `.crossbar` folder
-
-  Note, this config isn't entirely necessary, however it has both types of authentication ready for testing (eg, `ticket` and `secret` )
-
-* Restart crossbar
-
-	`crossbar -d start`
-
-
-## Run Example ##
-
-Once crossbar is running, you can launch the test application in Corona.
-
-Update `app_config.lua` for your setup, eg, change IP address for your `crossbar` server.
-
+The expected output is in the [examples README](../README.md#authentication); how authentication works is in the [API reference](../../docs/api.md#authentication).

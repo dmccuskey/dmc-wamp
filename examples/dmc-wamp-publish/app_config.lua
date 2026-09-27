@@ -24,7 +24,7 @@ local Config = {}
 
 
 Config.server = {
-	host = 'ws://192.168.3.92/ws',
+	host = 'ws://127.0.0.1/ws',
 	port = 8080,
 	realm = 'realm1',
 
