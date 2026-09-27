@@ -1,7 +1,8 @@
 --====================================================================--
--- dmc-wamp-publish: App Config
+-- dmc-wamp-rpc-callee: App Config
 --
 -- for specific application configurations
+--
 --====================================================================--
 
 --[[
@@ -15,11 +16,6 @@ However, those changes are typically NOT checked in.
 --]]
 
 
---====================================================================--
---== Config Exports
---====================================================================--
-
-
 local Config = {}
 
 
@@ -28,7 +24,7 @@ Config.server = {
 	port = 8080,
 	realm = 'realm1',
 
-	pubsub_topic = 'com.myapp.topic1'
+	rpc_procedure = 'com.example.multiply',
 }
 
 

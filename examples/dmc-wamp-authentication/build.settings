@@ -5,7 +5,7 @@ settings =
 	{
 		['plugin.bit'] =
 		{
-			publisherId = 'com.coronalabs
+			publisherId = 'com.coronalabs'
 		}
 	},
 

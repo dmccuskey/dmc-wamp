@@ -1,12 +1,13 @@
 --====================================================================--
--- WAMP Basic Publish
+-- WAMP Basic RPC
 --
--- Basic Publish test for the WAMP library
+-- Callee RPC for the WAMP library
 --
 -- Sample code is MIT licensed, the same license which covers Lua itself
 -- http://en.wikipedia.org/wiki/MIT_License
 -- Copyright (C) 2014-2015 David McCuskey. All Rights Reserved.
 --====================================================================--
+
 
 
 print( '\n\n##############################################\n\n' )
@@ -33,14 +34,9 @@ local Wamp = require 'dmc_corona.dmc_wamp'
 local HOST = gINFO.server.host
 local PORT = gINFO.server.port
 local REALM = gINFO.server.realm
-local WAMP_PUBSUB_TOPIC = gINFO.server.pubsub_topic
+local WAMP_RPC_PROCEDURE = gINFO.server.rpc_procedure
 
 local wamp -- ref to WAMP object
-local doWampPublish -- forward delare function
-
--- config for message count
-local num_msgs = 5
-local count = 0
 
 
 
@@ -48,30 +44,31 @@ local count = 0
 --== Support Functions
 
 
-doWampPublish = function()
-	print( ">> Wamp Publish event")
+-- the procedure we offer to other WAMP clients
+-- it gets the call's arguments as two tables, args (array) and kwargs
+-- (dictionary), and returns its results in the same form
+--
+local multiply = function( args, kwargs )
+	print( "WAMP: received INVOCATION", args[1], args[2] )
+	return { results={ args[1] * args[2] } }
+end
 
-	local topic = WAMP_PUBSUB_TOPIC
 
-	local publish_handler = function( publication )
-		print( ">> WAMP publish acknowledgment" )
+-- call our own procedure, as any other client could
+--
+local doWampRPC = function()
 
-		print( string.format( "publish id: %d", publication.id ) )
+	local callEvent_handler = function( event )
+		if event.type == Wamp.ONRESULT then
+			print( "WAMP: successful RESULT" )
+			print( '>>  data', event.data )
 
-		if count == num_msgs then
-			-- wamp:close()
-		else
-			timer.performWithDelay( 500, function() doWampPublish() end )
+			-- close connection
+			timer.performWithDelay( 2000, function() wamp:leave() end  )
 		end
 	end
 
-	count = count + 1
-	local params = {
-		args={ "message-" .. tostring(count), },
-		-- kwargs={},
-		callback=publish_handler
-	}
-	wamp:publish( topic, params )
+	wamp:call( WAMP_RPC_PROCEDURE, callEvent_handler, { args={6,7} } )
 
 end
 
@@ -83,15 +80,20 @@ end
 
 
 local wampEvent_handler = function( event )
-	print( ">> wampEvent_handler", event.type )
+	-- print( ">> wampEvent_handler", event.type )
 
 	if event.type == wamp.ONJOIN then
 		print( ">> We have WAMP Join" )
-		doWampPublish()
+		wamp:register( multiply, { procedure=WAMP_RPC_PROCEDURE } )
+		print( "WAMP: registered", WAMP_RPC_PROCEDURE )
+
+		-- register() doesn't report when the router has accepted it,
+		-- so give it a moment
+		timer.performWithDelay( 500, doWampRPC )
 
 	elseif event.type == wamp.ONDISCONNECT then
 		print( ">> We have WAMP Disconnect" )
-		print( ">> ", event.reason, event.message )
+
 	end
 
 end

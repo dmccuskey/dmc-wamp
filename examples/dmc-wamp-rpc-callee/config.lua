@@ -12,8 +12,25 @@ application =
 	content =
 	{
 		width = 320,
-		height = 480,
+		height = 568,
 		scale = "letterBox",
+		imageSuffix =
+		{
+			["@2x"] = 1.5,
+		},
+		fps = 60
+	},
+	notification =
+	{
+		iphone = {
+			types = {
+				"badge", "sound", "alert"
+			}
+		},
+		google =
+	    {
+	      projectNumber = "565910089041",
+	    },
 	},
 	showRuntimeErrors = false
 }
