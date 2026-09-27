@@ -1,7 +1,7 @@
 --====================================================================--
 -- dmc_wamp/protocol.lua
 --
--- Documentation: http://docs.davidmccuskey.com/
+-- Documentation: https://github.com/dmccuskey/dmc-wamp
 --====================================================================--
 
 --[[
