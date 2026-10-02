@@ -62,6 +62,7 @@ local Utils = require 'lib.dmc_lua.lua_utils'
 --== Setup, Constants
 
 
+local newClass = Objects.newClass
 local assert = assert
 local type = type
 

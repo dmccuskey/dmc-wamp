@@ -46,11 +46,11 @@ local wamp -- ref to WAMP object
 
 -- the procedure we offer to other WAMP clients
 -- it gets the call's arguments as two tables, args (array) and kwargs
--- (dictionary), and returns its results in the same form
+-- (dictionary), and returns its result
 --
 local multiply = function( args, kwargs )
 	print( "WAMP: received INVOCATION", args[1], args[2] )
-	return { results={ args[1] * args[2] } }
+	return args[1] * args[2]
 end
 
 
@@ -59,7 +59,10 @@ end
 local doWampRPC = function()
 
 	local callEvent_handler = function( event )
-		if event.type == Wamp.ONRESULT then
+		if event.type == Wamp.ONRESULT and event.is_error then
+			print( "WAMP: call failed", event.error.error, event.error.message )
+
+		elseif event.type == Wamp.ONRESULT then
 			print( "WAMP: successful RESULT" )
 			print( '>>  data', event.data )
 
@@ -84,12 +87,18 @@ local wampEvent_handler = function( event )
 
 	if event.type == wamp.ONJOIN then
 		print( ">> We have WAMP Join" )
-		wamp:register( multiply, { procedure=WAMP_RPC_PROCEDURE } )
-		print( "WAMP: registered", WAMP_RPC_PROCEDURE )
-
-		-- register() doesn't report when the router has accepted it,
-		-- so give it a moment
-		timer.performWithDelay( 500, doWampRPC )
+		wamp:register( multiply, {
+			procedure=WAMP_RPC_PROCEDURE,
+			callback=function( event )
+				if event.is_error then
+					-- eg, wamp.error.procedure_already_exists
+					print( "WAMP: register failed", event.error.error )
+				else
+					print( "WAMP: registered", WAMP_RPC_PROCEDURE )
+					doWampRPC()
+				end
+			end
+		} )
 
 	elseif event.type == wamp.ONDISCONNECT then
 		print( ">> We have WAMP Disconnect" )
