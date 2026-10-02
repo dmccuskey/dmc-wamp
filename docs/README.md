@@ -11,6 +11,7 @@ New here? The [Quick Start](../README.md#quick-start) gets a Solar2D app calling
 
 - [API reference](api.md): connection options, events, calling and offering procedures, publishing and subscribing, authentication, configuration, known issues
 - [Examples](../examples/README.md): a caller, a callee, a publisher, a subscriber and an authenticated client
+- [Changelog](../CHANGELOG.md)
 - [Router for the examples](../examples/router/README.md): Crossbar.io in Docker, with a backend to talk to
 
 ## Internals
@@ -28,6 +29,7 @@ New here? The [Quick Start](../README.md#quick-start) gets a Solar2D app calling
 
 ```text
 README.md                   landing page and Quick Start
+CHANGELOG.md
 LICENSE
 docs/                       this documentation
 dmc_corona/                 what apps copy
@@ -41,4 +43,5 @@ dmc_corona.cfg              library configuration
 examples/                   sample apps, each with its own generated dmc_corona/
 └── router/                 Crossbar.io router configuration and backend
 Snakefile                   build rules for the generated copies
+tests/                      unit tests (tests/run_unit.sh)
 ```
