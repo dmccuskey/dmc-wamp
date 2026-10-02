@@ -66,6 +66,7 @@ local WErrors = require 'dmc_wamp.exception'
 --== Setup, Constants
 
 
+local newClass = Objects.newClass
 local pairs = pairs
 local rawget = rawget
 local type = type

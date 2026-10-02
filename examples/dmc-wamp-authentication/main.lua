@@ -54,7 +54,11 @@ local doWampRPC = function()
 		-- print( ">> WAMP callEvent_handler", event.type )
 		local etype = event.type
 
-		if etype == Wamp.ONRESULT then
+		if etype == Wamp.ONRESULT and event.is_error then
+			-- eg, wamp.error.no_such_procedure: nobody offers it
+			print( "WAMP: call failed", event.error.error, event.error.message )
+
+		elseif etype == Wamp.ONRESULT then
 			print( "WAMP: successful RESULT" )
 
 			if event.data then

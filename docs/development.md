@@ -4,12 +4,24 @@ How to test dmc-wamp and rebuild the libraries it bundles.
 
 ## Testing
 
-There are no automated tests yet. Test by hand against a WAMP router:
+### Unit Tests
+
+`tests/dmc_wamp_spec.lua` tests the messages, and a session driven through a stand-in transport with messages as a router sends them: errors, publish acknowledgments, call options, register and unregister, invocation replies, leaving and lost connections, challenges. Run it with plain Lua 5.1 and [dkjson](https://luarocks.org/modules/dhkolf/dkjson):
+
+```sh
+tests/run_unit.sh
+```
+
+It uses the interpreter in `../tools/lua51/bin/lua`; set `LUA` to use another.
+
+### Against a Router
+
+The examples test the rest against a real WAMP router:
 
 1. Start the router in [`examples/router/`](../examples/router/README.md) (Crossbar.io in Docker, with a small backend that offers a procedure and publishes on a topic).
 2. Open each example's `main.lua` in the Solar2D Simulator and compare its console output with the [examples README](../examples/README.md).
 
-The authentication example needs the Simulator (it uses Solar2D's `crypto` library). The others also run in plain Lua 5.1 inside [lua-corovel](https://github.com/dmccuskey/lua-corovel), the way dmc-websockets runs its [Autobahn tests](https://github.com/dmccuskey/dmc-websockets/blob/master/docs/development.md#autobahn-testsuite), with a stand-in `display` table (`dmc_utils` reads it when loaded).
+The authentication example needs the Simulator (it uses Solar2D's `crypto` library). The others also run in plain Lua 5.1 inside [lua-corovel](https://github.com/dmccuskey/lua-corovel), the way dmc-websockets runs its [Autobahn tests](https://github.com/dmccuskey/dmc-websockets/blob/master/docs/development.md#autobahn-testsuite).
 
 To see the messages the client sends, set `DEBUG_ACTIVE` in the `[DMC_WAMP]` section of the example's `dmc_corona.cfg` ([Configuration](api.md#configuration)); the router's log (`docker logs wamp-router`) shows its side.
 
@@ -32,8 +44,6 @@ snakemake --cores 1 --forceall build_all
 ```
 
 The copies come from the sibling checkouts as they are on disk, on whatever branch each has checked out.
-
-The examples' `dmc_corona/` folders also hold `dmc_objects.lua`, `dmc_states_mix.lua` and `dmc_utils.lua`, left from older builds: the Snakefile no longer requires them, so a rebuild doesn't update them. The subscribe and RPC caller examples use `dmc_utils` to print error events.
 
 ## Branches
 

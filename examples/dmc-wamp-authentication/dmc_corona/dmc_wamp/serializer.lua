@@ -66,6 +66,7 @@ local WUtils = require 'dmc_wamp.utils'
 --== Setup, Constants
 
 
+local newClass = Objects.newClass
 local tostring = tostring
 local jdecode = json.decode
 local jencode = json.encode

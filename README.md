@@ -29,7 +29,7 @@ end )
 - A port of [AutobahnPython](https://github.com/crossbario/autobahn-python)'s WAMP code to Lua
 - Pure Lua, MIT licensed
 
-Not everything works yet: error replies from the router, publish acknowledgments and `unregister()` don't, and a lost connection crashes the app. See [Known Issues](docs/api.md#known-issues).
+Not everything is there yet: no salted WAMP-CRA, MessagePack, or subscription and publish options. See [Known Issues](docs/api.md#known-issues).
 
 ## Quick Start
 
@@ -69,7 +69,11 @@ Prerequisites: the [Solar2D](https://solar2d.com/) Simulator, [Docker](https://w
    local wamp = Wamp{ uri='ws://127.0.0.1/ws', port=8080, realm='realm1' }
 
    local function onResult( event )
-   	print( 'add2 result:', event.data )
+   	if event.is_error then
+   		print( 'add2 failed:', event.error.error )
+   	else
+   		print( 'add2 result:', event.data )
+   	end
    end
 
    local function onTopic( event )
@@ -87,7 +91,7 @@ Prerequisites: the [Solar2D](https://solar2d.com/) Simulator, [Docker](https://w
    		wamp:subscribe( 'com.myapp.topic1', onTopic )
 
    	elseif event.type == wamp.ONDISCONNECT then
-   		print( 'disconnected:', event.reason )
+   		print( 'disconnected:', event.reason, event.message )
    	end
    end )
    ```
@@ -104,7 +108,7 @@ Prerequisites: the [Solar2D](https://solar2d.com/) Simulator, [Docker](https://w
    ...
    ```
 
-   The two replies can arrive in either order, and the tick numbers count up from when the router started. If `joined realm1` never appears, check that the router is running (`docker ps`) and that the address and port match; the library doesn't yet report a failed connection ([Known Issues](docs/api.md#known-issues)).
+   The two replies can arrive in either order, and the tick numbers count up from when the router started. If the router isn't running (`docker ps`), or the address or port is wrong, the console shows `disconnected:	wamp.close.transport_lost` instead. `add2 failed:	wamp.error.no_such_procedure` means the router's backend isn't running yet.
 
    **Going further:** offer your own procedures, publish, authenticate and leave the realm with the [API reference](docs/api.md) and the [examples](examples/README.md).
 
@@ -115,6 +119,7 @@ Prerequisites: the [Solar2D](https://solar2d.com/) Simulator, [Docker](https://w
 - [API reference](docs/api.md): options, methods, events, authentication, configuration and known issues
 - [Examples](examples/README.md): a caller, a callee, a publisher, a subscriber and an authenticated client, with a router to run them against
 - [Development](docs/development.md): testing, rebuilding the bundled libraries
+- [Changelog](CHANGELOG.md)
 
 Everything else is on the [documentation home](docs/README.md).
 

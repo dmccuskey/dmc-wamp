@@ -31,7 +31,7 @@ WAMP: successful RESULT
 >> We have WAMP Disconnect
 ```
 
-A procedure returns its results as a table, `{ results={ ... } }` ([API reference](../docs/api.md#register)).
+The procedure returns its result as a plain value; it calls only once the router has confirmed the registration ([API reference](../docs/api.md#register)).
 
 ## Subscribe
 
@@ -54,16 +54,26 @@ WAMP: successful UNSUBSCRIBE
 
 ## Publish
 
-[dmc-wamp-publish](dmc-wamp-publish/): meant to publish five messages on `com.myapp.topic1`, each after the router acknowledges the one before. **It stops after the first**, because the acknowledgment never comes ([Known Issues](../docs/api.md#known-issues)):
+[dmc-wamp-publish](dmc-wamp-publish/): publishes five messages on `com.myapp.topic1`, each after the router acknowledges the one before, then leaves:
 
 ```text
 WAMP: Starting WAMP Communication
+>> wampEvent_handler	wamp_on_connect_event
 >> wampEvent_handler	wamp_on_join_event
 >> We have WAMP Join
 >> Wamp Publish event
+>> WAMP publish acknowledgment
+publish id: 4290550126906760
+...
+>> Wamp Publish event
+>> WAMP publish acknowledgment
+publish id: 5739908810836322
+>> wampEvent_handler	wamp_on_disconnect_event
+>> We have WAMP Disconnect
+>> 	wamp.close.normal	nil
 ```
 
-The message is delivered, though: the router's log (`docker logs wamp-router`) shows the backend receiving it:
+The router's log (`docker logs wamp-router`) shows the backend receiving them:
 
 ```text
 [Container      28] backend: received event ('message-1',) {}

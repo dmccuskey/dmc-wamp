@@ -22,7 +22,6 @@ print( '\n\n##############################################\n\n' )
 _G.gINFO = require 'app_config'
 
 local Wamp = require 'dmc_corona.dmc_wamp'
-local Utils = require 'dmc_corona.dmc_utils'
 
 
 
@@ -54,7 +53,11 @@ local doWampRPC = function()
 		-- print( ">> WAMP callEvent_handler", event.type )
 		local etype = event.type
 
-		if etype == Wamp.ONRESULT then
+		if etype == Wamp.ONRESULT and event.is_error then
+			-- eg, wamp.error.no_such_procedure: nobody offers it
+			print( "WAMP: call failed", event.error.error, event.error.message )
+
+		elseif etype == Wamp.ONRESULT then
 			print( "WAMP: successful RESULT" )
 
 			if event.data then
@@ -108,7 +111,7 @@ local wampEvent_handler = function( event )
 
 	elseif event.type == wamp.ONERROR then
 		print( ">> We have WAMP Error" )
-		Utils.print( event )
+		print( '>> ', event.code, event.reason )
 
 	end
 

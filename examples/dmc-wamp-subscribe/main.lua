@@ -24,7 +24,6 @@ print( '\n\n##############################################\n\n' )
 _G.gINFO = require 'app_config'
 
 local Wamp = require 'dmc_corona.dmc_wamp'
-local Utils = require 'dmc_corona.dmc_utils'
 
 
 --====================================================================--
@@ -118,7 +117,7 @@ local wampEvent_handler = function( event )
 
 	elseif event.type == wamp.ONERROR then
 		print( ">> We have WAMP ERROR" )
-		Utils.print( event )
+		print( '>> ', event.code, event.reason )
 
 	end
 

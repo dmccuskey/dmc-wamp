@@ -53,13 +53,17 @@ doWampPublish = function()
 
 	local topic = WAMP_PUBSUB_TOPIC
 
-	local publish_handler = function( publication )
+	local publish_handler = function( event )
+		if event.is_error then
+			print( ">> WAMP publish failed", event.error )
+			return
+		end
 		print( ">> WAMP publish acknowledgment" )
 
-		print( string.format( "publish id: %d", publication.id ) )
+		print( string.format( "publish id: %.0f", event.publication.id ) )
 
 		if count == num_msgs then
-			-- wamp:close()
+			wamp:leave()
 		else
 			timer.performWithDelay( 500, function() doWampPublish() end )
 		end
