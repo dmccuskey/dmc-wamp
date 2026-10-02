@@ -331,10 +331,10 @@ Connection settings go in the [options](#options) of each connection instead. Ho
 
 Checked against Crossbar.io in October 2026:
 
-- A dmc-wamp callee doesn't enforce a call's `timeout`, send progressive results, or support call canceling.
-- `Auth.derive_key()`, `Auth.pbkdf2()`, `Auth.generate_wcs()` and the TOTP helpers raise "not implemented": no salted WAMP-CRA.
-- Only JSON serialization; no MessagePack.
-- Objects can't be registered as a group of procedures (`register()` with a table raises "not implemented").
-- No subscription options (such as prefix or wildcard matching) and no publish options (such as `exclude_me`).
-- `wss://` hasn't been tested with a WAMP router.
+- A dmc-wamp callee doesn't enforce a call's `timeout`, send progressive results, or support call canceling ([#6](https://github.com/dmccuskey/dmc-wamp/issues/6)).
+- `Auth.derive_key()`, `Auth.pbkdf2()`, `Auth.generate_wcs()` and the TOTP helpers raise "not implemented": no salted WAMP-CRA ([#1](https://github.com/dmccuskey/dmc-wamp/issues/1)).
+- Only JSON serialization; no MessagePack ([#2](https://github.com/dmccuskey/dmc-wamp/issues/2)).
+- Objects can't be registered as a group of procedures (`register()` with a table raises "not implemented") ([#3](https://github.com/dmccuskey/dmc-wamp/issues/3)).
+- No subscription options (such as prefix or wildcard matching) and no publish options (such as `exclude_me`) ([#4](https://github.com/dmccuskey/dmc-wamp/issues/4)).
+- `wss://` hasn't been tested with a WAMP router ([#5](https://github.com/dmccuskey/dmc-wamp/issues/5)).
 - A malformed URI (such as one with a space) is a protocol violation: Crossbar.io closes the connection rather than answering with an error, and the listener gets `ONDISCONNECT`.
