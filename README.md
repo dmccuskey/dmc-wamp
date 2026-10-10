@@ -129,4 +129,4 @@ dmc-wamp is more or less a port of the WAMP code of [AutobahnPython](https://git
 
 ## License
 
-MIT, see [LICENSE](LICENSE). The bundled DMC libraries in `dmc_corona/` are MIT licensed too, except `dmc_corona/lib/sha1.lua` (from dmc-websockets): Jeffrey Friedl's pure-Lua SHA-1, whose header states his copyright but no license.
+MIT, see [LICENSE](LICENSE). The bundled DMC libraries in `dmc_corona/` are MIT licensed too, `dmc_corona/lib/sha1.lua` (from dmc-websockets) included.
