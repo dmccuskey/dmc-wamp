@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.1.1 (2026-10-11)
+
+### Fixed
+
+- Rebuilt with dmc-websockets 1.6.1 and lua-promise 0.2.1: a refused connection is reported right away instead of after the connect timeout, and a callback that raises an error no longer keeps the other callbacks of the same promise from running.
+
 ## 1.1.0 (2026-10-01)
 
 ### Fixed

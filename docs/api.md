@@ -307,7 +307,7 @@ The function gets an event with `event.method` (`Wamp.AUTH_WAMPCRA` or `Wamp.AUT
 | `Wamp.ONSUBSCRIBED`, `Wamp.ONPUBLISH`, `Wamp.ONUNSUBSCRIBED` | Subscription handler events |
 | `Wamp.ONPUBLISHED` | Publish callback event |
 | `Wamp.ONREGISTERED`, `Wamp.ONUNREGISTERED` | Register and unregister callback events |
-| `Wamp.VERSION` | The library's version, e.g. `'1.1.0'` |
+| `Wamp.VERSION` | The library's version, e.g. `'1.1.1'` |
 | `Wamp.ApplicationError` | The error class a registered procedure can raise, see [register()](#register) |
 | `Wamp.AUTH_WAMPCRA`, `Wamp.AUTH_TICKET` | `'wampcra'`, `'ticket'` |
 | `Wamp.DEFAULT_PROTOCOL` | `{ 'wamp.2.json' }` |
