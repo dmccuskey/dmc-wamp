@@ -45,7 +45,7 @@ WAMP support adapted from:
 
 -- Semantic Versioning Specification: http://semver.org/
 
-local VERSION = "1.1.0"
+local VERSION = "1.1.1"
 
 
 
@@ -136,6 +136,9 @@ local Wamp = newClass( WebSocket, {name="WAMP Connector"} )
 --== Class Constants ==--
 
 Wamp.VERSION = VERSION
+
+-- raise one in a registered procedure to send the caller an error URI
+Wamp.ApplicationError = WError.ApplicationError
 
 Wamp.DEFAULT_PROTOCOL = { 'wamp.2.json' }
 
