@@ -22,5 +22,6 @@ package.preload.json = package.preload.json or function() return require 'dkjson
 system = { pathForFile=function( f ) return f end, ResourceDirectory='.' }
 local lunatest = require 'lunatest'
 lunatest.suite( 'dmc_wamp_spec' )
+lunatest.suite( 'dmc_wamp_class_spec' )
 lunatest.run()
 " 2>&1 | grep -v "^Lua Patch::"

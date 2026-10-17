@@ -240,7 +240,7 @@ end
 wamp:publish( 'com.myapp.topic1', { args={ 'hello' }, callback=onPublished } )
 ```
 
-## Leaving
+## Leaving and Reconnecting
 
 ### leave()
 
@@ -257,6 +257,14 @@ wamp:close()
 ```
 
 Closes the connection without leaving the realm first: the listener gets `ONDISCONNECT` with `'wamp.close.transport_lost'`, and the router sees a lost connection. Prefer `leave()` while the realm is joined.
+
+### connect()
+
+```lua
+wamp:connect()
+```
+
+After `ONDISCONNECT`, connects again and joins the realm as a new session, with the same object, options and listeners: the listener gets `ONCONNECT` and `ONJOIN` again. Subscriptions and registrations ended with the old session: make them again after `ONJOIN`. Reconnecting isn't automatic; call `connect()` when you want it (see dmc-websockets' [Keep-Alive](https://github.com/dmccuskey/dmc-websockets/blob/master/docs/api.md#keep-alive) for noticing a dead connection). While the object is connecting or connected, `connect()` does nothing.
 
 ## Properties
 
@@ -307,7 +315,7 @@ The function gets an event with `event.method` (`Wamp.AUTH_WAMPCRA` or `Wamp.AUT
 | `Wamp.ONSUBSCRIBED`, `Wamp.ONPUBLISH`, `Wamp.ONUNSUBSCRIBED` | Subscription handler events |
 | `Wamp.ONPUBLISHED` | Publish callback event |
 | `Wamp.ONREGISTERED`, `Wamp.ONUNREGISTERED` | Register and unregister callback events |
-| `Wamp.VERSION` | The library's version, e.g. `'1.1.1'` |
+| `Wamp.VERSION` | The library's version, e.g. `'1.2.0'` |
 | `Wamp.ApplicationError` | The error class a registered procedure can raise, see [register()](#register) |
 | `Wamp.AUTH_WAMPCRA`, `Wamp.AUTH_TICKET` | `'wampcra'`, `'ticket'` |
 | `Wamp.DEFAULT_PROTOCOL` | `{ 'wamp.2.json' }` |

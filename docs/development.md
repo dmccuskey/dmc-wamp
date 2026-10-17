@@ -6,7 +6,7 @@ How to test dmc-wamp and rebuild the libraries it bundles.
 
 ### Unit Tests
 
-`tests/dmc_wamp_spec.lua` tests the messages, and a session driven through a stand-in transport with messages as a router sends them: errors, publish acknowledgments, call options, register and unregister, invocation replies, leaving and lost connections, challenges. Run it with plain Lua 5.1 and [dkjson](https://luarocks.org/modules/dhkolf/dkjson):
+`tests/dmc_wamp_spec.lua` tests the messages, and a session driven through a stand-in transport with messages as a router sends them: errors, publish acknowledgments, call options, register and unregister, invocation replies, leaving and lost connections, challenges. `tests/dmc_wamp_class_spec.lua` tests the `Wamp` class over a WebSocket connection, with a stand-in for dmc-sockets: joining, and reconnecting with `connect()`. Run them with plain Lua 5.1 and [dkjson](https://luarocks.org/modules/dhkolf/dkjson):
 
 ```sh
 tests/run_unit.sh

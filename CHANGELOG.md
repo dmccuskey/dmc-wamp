@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 (2026-10-17)
+
+### Added
+
+- `connect()` after `ONDISCONNECT` connects again and joins the realm as a new session, on the same object; before, it printed a warning and did nothing. Built with dmc-websockets 1.7.0, which added reconnecting. See [connect()](docs/api.md#connect).
+
+### Fixed
+
+- Subscriptions are forgotten when the session ends, as the router forgets them: after reconnecting, `unsubscribe()` for an old subscription raises "handler not found for topic" instead of sending the router an id it no longer knows.
+
 ## 1.1.1 (2026-10-11)
 
 ### Fixed
