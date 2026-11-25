@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 (2026-11-24)
+
+### Fixed
+
+- `close()` while still connecting to the router could stop the app on a later frame with `attempt to index field '_socket' (a nil value)`. Built with dmc-websockets 1.7.1 and dmc-sockets 0.4.0, which drop a pending connect when its socket is closed or removed (from Christian Kündig's fix, [dmc-websockets #23](https://github.com/dmccuskey/dmc-websockets/pull/23)).
+
 ## 1.2.0 (2026-10-17)
 
 ### Added
